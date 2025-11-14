@@ -1,0 +1,271 @@
+{{!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"> --}}
+<div class="card">
+  <h2><i class="fa-solid fa-upload"></i>Upload image to detect</h2>
+  <form id="form">
+    <input type="file" id="file" accept="image/*" required />
+    <button class="btn" type="submit"><i class="fa-brands fa-searchengin"></i>Detect</button>
+    <!-- Save controls -->
+    <select id="mealType" class="form-select d-inline-block" style="width:auto;vertical-align:middle;margin-left:8px;">
+      <option value="breakfast">breakfast</option>
+      <option value="lunch" selected>lunch</option>
+      <option value="dinner">dinner</option>
+      <option value="snack">snack</option>
+    </select>
+    <input type="number" id="servings" class="form-control d-inline-block" style="width:110px;vertical-align:middle;margin-left:8px;" min="0.25" step="0.25" value="1" />
+    <button class="btn secondary" type="button" id="saveBtn" disabled style="margin-left:8px;"><i class="fa-solid fa-floppy-disk"></i>Save as meal</button>
+  </form>
+  <p id="msg"></p>
+  <div id="result">
+    <div class="row g-3">
+      <div class="col-12 col-md-5">
+        <div class="card" style="overflow:hidden">
+          <img id="previewImg" src="" style="width:100%;height:auto;object-fit:cover;display:none"/>
+        </div>
+      </div>
+      <div class="col-12 col-md-7">
+        <div class="card" id="detectCard" ><div class="p-3 text-muted">No image selected.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const { BACKEND_URL, SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
+    // Reuse global client so session persists across pages
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const supabase = window.SUPABASE;
+    let lastFile, lastResult;
+    const form = document.getElementById('form');
+    let cachedTargets = null;
+
+    async function fetchTargets(){
+      if(cachedTargets) return cachedTargets;
+      try{
+        const sessionObj = await supabase.auth.getSession();
+        const token = sessionObj.data.session?.access_token;
+        const userRes = await supabase.auth.getUser();
+        const uid = userRes?.data?.user?.id || window.localStorage.getItem('DEV_USER_ID');
+        const headers = {};
+        if(token){ headers['Authorization'] = `Bearer ${token}`; } else if(uid){ headers['X-User-Id'] = uid; }
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers });
+        if(!res.ok) return null;
+        const j = await res.json();
+        const t = j?.profile?.targets || null;
+        if(t) cachedTargets = t;
+        return t;
+      }catch(_){ return null; }
+    }
+
+    function clamp(n){ return Math.max(0, Math.min(100, Math.round(n))); }
+
+    function renderProgressBars(nutrition){
+      const cont = document.getElementById('nutritionProgress');
+      if(!cont) return;
+
+      // Default max values if no targets (approx per-meal reasonable caps)
+      const defaults = { calories: 800, protein: 60, fat: 40, carbs: 100, fiber: 30 };
+
+      (async()=>{
+        const targets = await fetchTargets();
+        const maxes = {
+          calories: targets?.calories || defaults.calories,
+          protein: targets?.protein || defaults.protein,
+          fat: targets?.fat || defaults.fat,
+          carbs: targets?.carbs || defaults.carbs,
+          fiber: targets?.fiber || defaults.fiber,
+        };
+        const vals = {
+          calories: Number(nutrition?.calories || 0),
+          protein: Number(nutrition?.protein || 0),
+          fat: Number(nutrition?.fat || 0),
+          carbs: Number(nutrition?.carbs || 0),
+          fiber: Number(nutrition?.fiber || 0),
+        };
+        const pct = {
+          calories: clamp(100 * vals.calories / (maxes.calories || 1)),
+          protein: clamp(100 * vals.protein / (maxes.protein || 1)),
+          fat: clamp(100 * vals.fat / (maxes.fat || 1)),
+          carbs: clamp(100 * vals.carbs / (maxes.carbs || 1)),
+          fiber: clamp(100 * vals.fiber / (maxes.fiber || 1)),
+        };
+
+        cont.innerHTML = `
+          <div class="card p-3">
+            <h3 class="h5 mb-3">Nutrition</h3>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between"><span><i class="fa-solid fa-fire"></i>Calories</span><span>${vals.calories} / ${maxes.calories}</span></div>
+              <div class="progress" role="progressbar" aria-valuenow="${pct.calories}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-warning" style="width:${pct.calories}%">${pct.calories}%</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between"><span><i class="fa-solid fa-drumstick-bite"></i>Protein (g)</span><span>${vals.protein} / ${maxes.protein} g</span></div>
+              <div class="progress" role="progressbar" aria-valuenow="${pct.protein}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-success" style="width:${pct.protein}%">${pct.protein}%</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between"><span><i class="fa-solid fa-oil-can"></i>Fat (g)</span><span>${vals.fat} / ${maxes.fat} g</span></div>
+              <div class="progress" role="progressbar" aria-valuenow="${pct.fat}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-danger" style="width:${pct.fat}%">${pct.fat}%</div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between"><span><i class="fa-solid fa-bowl-rice"></i>Carbs (g)</span><span>${vals.carbs} / ${maxes.carbs} g</span></div>
+              <div class="progress" role="progressbar" aria-valuenow="${pct.carbs}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-info" style="width:${pct.carbs}%">${pct.carbs}%</div>
+              </div>
+            </div>
+            <div class="mb-1">
+              <div class="d-flex justify-content-between"><span><i class="fa-solid fa-carrot"></i>Fiber (g)</span><span>${vals.fiber} / ${maxes.fiber} g</span></div>
+              <div class="progress" role="progressbar" aria-valuenow="${pct.fiber}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-secondary" style="width:${pct.fiber}%">${pct.fiber}%</div>
+              </div>
+            </div>
+            ${targets ? '<div class="text-muted small mt-2">Compared to your daily targets.</div>' : '<div class="text-muted small mt-2">Compared to default per-meal caps.</div>'}
+          </div>
+        `;
+      })();
+    }
+    function preview(file){
+      const url = URL.createObjectURL(file);
+      const img = document.getElementById('previewImg');
+      if(img){ img.src = url; img.style.display = 'block'; }
+      //const detectCard = document.getElementById('detectCard');
+      //if(detectCard){ detectCard.innerHTML = '<div class="p-3 text-muted">Analyzing...</div>'; }
+    }
+    //load the uploaded image preview before click detect
+    document.getElementById('file')?.addEventListener('change', (e)=>{
+      const fileEl = document.getElementById('file');
+      const f = fileEl && fileEl.files ? fileEl.files[0] : null;
+      const detectCard = document.getElementById('detectCard');
+      if(detectCard){ detectCard.innerHTML = '<div class="p-3 text-muted">Click the Detect button to continue...</div>'; }
+      if(!f) return;
+
+      preview(f);
+    });
+
+    async function ensureProfileOrPrompt(){
+      try{
+        const sessionObj = await supabase.auth.getSession();
+        const token = sessionObj.data.session?.access_token;
+        const userRes = await supabase.auth.getUser();
+        const uid = userRes?.data?.user?.id || window.localStorage.getItem('DEV_USER_ID');
+        const headers = {};
+        if(token){ headers['Authorization'] = `Bearer ${token}`; } else if(uid){ headers['X-User-Id'] = uid; }
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers });
+        if(res.status === 404){
+          if(window.Swal){
+            const ret = await Swal.fire({ title: 'Missing profile', text:'Please complete your profile before saving a meal.', icon:'warning', confirmButtonText:'Go to Profile' });
+            if(ret.isConfirmed){ window.location.href = '/profile'; }
+          } else {
+            if(confirm('Please complete your profile. Go to Profile?')) window.location.href = '/profile';
+          }
+          return false;
+        }
+        return true;
+      }catch(e){ return true; }
+    }
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+    const fileEl = document.getElementById('file');
+      const f = fileEl && fileEl.files ? fileEl.files[0] : null;
+      if(!f) return;
+      lastFile = f;
+      preview(f);
+
+      const detectCard = document.getElementById('detectCard');
+      //detectCard.style.display = 'block';
+      if(detectCard){ detectCard.innerHTML = '<div class="p-3 text-muted">Analyzing...</div>'; }
+
+      const fd = new FormData(); fd.append('file', f);
+      try{
+        if(window.Swal){
+          Swal.fire({
+            title: 'Detecting... ',
+            html: 'Please wait while we analyze your image.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+        }
+        const res = await fetch(`${BACKEND_URL}/api/predict`, { method:'POST', body: fd, headers: { 'Accept': 'application/json' }});
+        let data;
+        try {
+          const ct = res.headers.get('content-type') || '';
+          if (!ct.includes('application/json')) throw new Error(`Unexpected content-type: ${ct}`);
+          data = await res.json();
+        } catch (err) {
+          data = { success: false, error: `Server error ${res.status}. Please try again.` };
+        }
+        if(window.Swal){ try{ Swal.close(); }catch(_e){} }
+        lastResult = data;
+        if(data.success){
+          const card = document.getElementById('detectCard'); if(card) card.innerHTML = `
+            <div class="p-3">
+              <h3 class="h5 mb-2">Result</h3>
+              <p class="mb-1">Dish: <strong>${data.food_name}</strong> <span class="text-muted">(conf: ${(data.confidence*100).toFixed(1)}%)</span></p>
+              <div class="small text-muted mb-2">Time: ${new Date().toLocaleString()}</div>
+              <div id="nutritionProgress"></div>
+            </div>`;
+          const sb = document.getElementById('saveBtn'); if(sb) sb.disabled = false;
+          renderProgressBars(data.nutrition);
+        } else {
+          if(window.Swal){ await Swal.fire({ icon:'error', title:'Detect failed', text: data.error || 'Please try again.' }); }
+          const sb = document.getElementById('saveBtn'); if(sb) sb.disabled = true;
+        }
+      }catch(err){
+        if(window.Swal){ try{ Swal.close(); }catch(_e){} await Swal.fire({ icon:'error', title:'Detect failed', text: err?.message || 'Please try again.' }); }
+        else { alert(err?.message || 'Detect failed'); }
+        const sb = document.getElementById('saveBtn'); if(sb) sb.disabled = true;
+      }
+    });
+
+    document.getElementById('saveBtn')?.addEventListener('click', async ()=>{
+  if(!lastResult || !lastFile) return;
+      const ok = await ensureProfileOrPrompt(); if(!ok) return;
+      const fd = new FormData();
+      const mealSel = document.getElementById('mealType');
+      const servingsEl = document.getElementById('servings');
+      const mealVal = mealSel && 'value' in mealSel ? mealSel.value : 'lunch';
+      const servingsVal = servingsEl && 'value' in servingsEl ? servingsEl.value : '1';
+      fd.append('meal_type', mealVal);
+      fd.append('servings', servingsVal);
+      fd.append('file', lastFile, lastFile.name);
+      const sess = await supabase.auth.getSession();
+      const token = sess.data.session?.access_token;
+      const userRes = await supabase.auth.getUser();
+      const uid = userRes?.data?.user?.id || window.localStorage.getItem('DEV_USER_ID');
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      else if (uid) headers['X-User-Id'] = uid;
+      try{
+        if(window.Swal){
+          Swal.fire({
+            title: 'Saving meal...',
+            html: 'Uploading and storing your meal log.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+        }
+        const res = await fetch(`${BACKEND_URL}/api/meals/log`, { method: 'POST', body: fd, headers });
+        let data;
+        try { data = await res.json(); } catch(_e){ data = { success: res.ok, error: res.statusText }; }
+        if(window.Swal){ try{ Swal.close(); }catch(_e){} }
+        if (data.success) {
+          const msg = data.warning ? `Meal saved\nNote: ${data.warning}` : 'Meal saved';
+          if(window.Swal){ await Swal.fire({ icon:'success', title: msg.replace('\n',' ')}); } else { alert(msg); }
+        } else {
+          if(window.Swal){ await Swal.fire({ icon:'error', title:'Error', text: data.error || '' }); } else { alert(data.error || 'Error'); }
+        }
+      }catch(err){
+        if(window.Swal){ try{ Swal.close(); }catch(_e){} await Swal.fire({ icon:'error', title:'Error', text: err?.message || 'Failed to save meal' }); }
+        else { alert(err?.message || 'Failed to save meal'); }
+      }
+    });
+  })();
+</script>

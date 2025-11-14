@@ -1,0 +1,124 @@
+<div class="container" style="max-width:720px">
+  <h2>Account Settings</h2>
+
+  <div class="card" style="padding:16px;margin-top:12px">
+    <h4>Profile</h4>
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-6">
+        <label>Display name</label>
+        <input id="acc_display_name" type="text" placeholder="Your name" />
+      </div>
+      <div class="col-12 col-md-6">
+        <label>Avatar URL</label>
+        <input id="acc_url_image" type="url" placeholder="https://..." />
+      </div>
+      <div class="col-12">
+        <button id="saveProfileBtn" class="btn btn-primary">Save</button>
+        <span id="profileMsg" class="ms-2"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:16px;margin-top:12px">
+    <h4>Password</h4>
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-6">
+        <label>New password</label>
+        <input id="new_password" type="password" placeholder="••••••••" />
+      </div>
+      <div class="col-12">
+        <button id="changePassBtn" class="btn btn-secondary">Change password</button>
+        <button id="sendResetBtn" class="btn btn-outline-secondary ms-2">Send reset email</button>
+        <span id="passMsg" class="ms-2"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:16px;margin-top:12px;border-color:#dc3545">
+    <h4 style="color:#dc3545">Danger zone</h4>
+    <p>Delete your account and all associated data. This action cannot be undone.</p>
+    <button id="deleteAccBtn" class="btn btn-outline-danger">Delete account</button>
+    <span id="deleteMsg" class="ms-2"></span>
+  </div>
+</div>
+
+<script>
+  (async function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
+    if(!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY){ return; }
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function getSession(){ try { const { data } = await sb.auth.getSession(); return data?.session || null; } catch { return null; } }
+    async function getUser(){ try { const { data } = await sb.auth.getUser(); return data?.user || null; } catch { return null; } }
+
+    // Populate fields
+    const u = await getUser();
+    if(!u){ window.location.href = '/login'; return; }
+    let display = (u.user_metadata && (u.user_metadata.display_name || u.user_metadata.full_name)) || '';
+    let url_image = (u.user_metadata && (u.user_metadata.avatar_url || u.user_metadata.picture)) || '';
+    let email = u.email || '';
+    try{
+      const { data } = await sb.from('users').select('display_name,url_image,email').eq('user_id', u.id).limit(1).single();
+      if(data){
+        display = data.display_name || display;
+        url_image = data.url_image || url_image;
+        email = data.email || email;
+      }
+    }catch(e){}
+    const nameEl = document.getElementById('acc_display_name');
+    const urlEl = document.getElementById('acc_url_image');
+    if(nameEl && 'value' in nameEl) nameEl.value = display || '';
+    if(urlEl && 'value' in urlEl) urlEl.value = url_image || '';
+
+    // Save profile
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const profileMsg = document.getElementById('profileMsg');
+    saveBtn?.addEventListener('click', async ()=>{
+      const name = nameEl && 'value' in nameEl ? nameEl.value.trim() : '';
+      const avatar = urlEl && 'value' in urlEl ? urlEl.value.trim() : '';
+      try{
+        await sb.from('users').upsert({ user_id: u.id, email, display_name: name || null, url_image: avatar || null }, { onConflict: 'user_id' });
+        if(profileMsg) profileMsg.textContent = 'Saved';
+      }catch(e){ if(profileMsg) profileMsg.textContent = e?.message || 'Save failed'; }
+    });
+
+    // Change password
+    const changePassBtn = document.getElementById('changePassBtn');
+    const newPassEl = document.getElementById('new_password');
+    const passMsg = document.getElementById('passMsg');
+    changePassBtn?.addEventListener('click', async ()=>{
+      const newPass = newPassEl && 'value' in newPassEl ? newPassEl.value : '';
+      if(!newPass || newPass.length < 6){ if(passMsg) passMsg.textContent = 'Password must be at least 6 chars'; return; }
+      try{
+        const { error } = await sb.auth.updateUser({ password: newPass });
+        if(error) { passMsg.textContent = error.message; } else { passMsg.textContent = 'Password updated'; }
+      }catch(e){ if(passMsg) passMsg.textContent = e?.message || 'Update failed'; }
+    });
+
+    // Send reset email
+    const sendResetBtn = document.getElementById('sendResetBtn');
+    sendResetBtn?.addEventListener('click', async ()=>{
+      try{
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login' });
+        if(passMsg) passMsg.textContent = error ? error.message : 'Reset email sent';
+      }catch(e){ if(passMsg) passMsg.textContent = e?.message || 'Failed to send reset email'; }
+    });
+
+    // Delete account
+    const delBtn = document.getElementById('deleteAccBtn');
+    const delMsg = document.getElementById('deleteMsg');
+    delBtn?.addEventListener('click', async ()=>{
+      if(!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
+      try{
+        const session = await getSession();
+        const token = session?.access_token;
+        const res = await fetch('/api/user/account', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+        const j = await res.json();
+        if(!res.ok || !j?.success){ throw new Error(j?.error || 'Delete failed'); }
+        if(delMsg) delMsg.textContent = 'Account deleted';
+        await sb.auth.signOut();
+        window.location.href = '/login';
+      }catch(e){ if(delMsg) delMsg.textContent = e?.message || 'Delete failed'; }
+    });
+  })();
+</script>

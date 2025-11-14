@@ -1,0 +1,13 @@
+*.keras
+node_modules/
+.env
+data/
+ 
+# Python virtual environments and caches
+.venv/
+flask_backend/.venv/
+__pycache__/
+*.py[cod]
+
+# Optional: local web config (contains secrets)
+# web/config.js

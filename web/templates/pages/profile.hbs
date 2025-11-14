@@ -1,0 +1,199 @@
+<div class="card">
+  <h2>Profile and Goals</h2>
+  <form id="profile-form">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <label>Age <input type="number" id="age" min="5" max="100" required/></label>
+      <label>Height (cm) <input type="number" id="height" required/></label>
+      <label>Weight (kg) <input type="number" id="weight" step="0.1" required/></label>
+      <label>Goal Weight (kg) <input type="number" id="goal_weight" step="0.1" placeholder="(optional)"/></label>
+      <label>Gender
+        <select id="gender"><option value="male">male</option><option value="female">female</option></select>
+      </label>
+      <label>Activity
+        <select id="activity"><option value="sedentary">sedentary</option><option value="light">light</option><option value="moderate">moderate</option><option value="active">active</option><option value="very_active">very_active</option></select>
+      </label>
+    </div>
+  <button class="btn" style="margin-top:12px" type="submit">Save</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Avatar</h3>
+  <div class="d-flex align-items-center gap-3">
+    <img id="avatarPreview" src="/app/templates/partials/default-avatar.svg" alt="avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover" />
+    <div class="d-flex align-items-center gap-2">
+      <input type="file" id="avatarFile" accept="image/*" />
+      <button id="uploadAvatarBtn" class="btn btn-outline-primary">Upload</button>
+    </div>
+  </div>
+  <div class="mt-2"><small>Tip: Use a square image ~ 400x400px.</small></div>
+</div>
+
+<div class="card">
+  <h3>Calculated Targets</h3>
+  <div id="targets"></div>
+</div>
+
+<script>
+  (function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } = window.APP_CONFIG || {};
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const supabase = window.SUPABASE;
+    const BUCKET = 'food-uploads';
+
+    async function currentUserId(){
+      const { data } = await supabase.auth.getUser();
+      return data?.user?.id;
+    }
+
+    async function loadTargetsPartial(){
+      const tplText = await fetch('/app/templates/partials/targets.hbs').then(r=>r.text());
+      return Handlebars.compile(tplText);
+    }
+
+    async function loadExisting(){
+      const uid = await currentUserId();
+      if(!uid) return;
+      // Load profile if exists
+      try{
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers: { 'Authorization': `Bearer ${token}` }});
+        if(res.ok){
+          const j = await res.json();
+          const p = j.profile || {};
+          const setVal = (id, v)=>{ const el = document.getElementById(id); if(el && 'value' in el && v!=null){ el.value = v; } };
+          setVal('age', p.age);
+          setVal('height', p.height_cm);
+          setVal('weight', p.weight_kg);
+          setVal('goal_weight', p.goal_weight);
+          setVal('gender', p.gender);
+          setVal('activity', p.activity || 'moderate');
+            // Render targets immediately if profile contains them
+            if(p.targets){
+              await renderTargets(p.targets);
+            } else {
+              const targetsEl = document.getElementById('targets');
+              if(targetsEl) targetsEl.innerHTML = '<small>No targets yet. Fill the form and click Save.</small>';
+            }
+        }
+      }catch(e){}
+      // Load avatar from app users
+      try{
+        const { data } = await supabase.from('users').select('url_image').eq('user_id', uid).limit(1).single();
+        if(data && data.url_image){ const img = document.getElementById('avatarPreview'); if(img) img.src = data.url_image; }
+      }catch(e){}
+    }
+
+    document.getElementById('profile-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const user_id = await currentUserId();
+      if(!user_id){
+        if(window.Swal){ await Swal.fire({ icon:'info', title:'Please sign in', confirmButtonText:'Go to Login' }).then(r=>{ if(r.isConfirmed) window.location.href='/login'; }); }
+        else { alert('Please sign in'); }
+        return;
+      }
+      const payload = {
+        age: (function(){ const el = document.getElementById('age'); return el && 'value' in el ? +el.value : 0; })(),
+        height_cm: (function(){ const el = document.getElementById('height'); return el && 'value' in el ? +el.value : 0; })(),
+        weight_kg: (function(){ const el = document.getElementById('weight'); return el && 'value' in el ? +el.value : 0; })(),
+        goal_weight: (function(){ const el = document.getElementById('goal_weight'); return el && 'value' in el && el.value ? +el.value : null; })(),
+        gender: (function(){ const el = document.getElementById('gender'); return el && 'value' in el ? el.value : 'male'; })(),
+        activity: (function(){ const el = document.getElementById('activity'); return el && 'value' in el ? el.value : 'moderate'; })(),
+      };
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const headers = { 'Content-Type':'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        const devId = window.localStorage.getItem('DEV_USER_ID');
+        if (devId) headers['X-User-Id'] = devId;
+      }
+      try{
+        if(window.Swal){
+          Swal.fire({ title:'Saving...', allowOutsideClick:false, didOpen:()=>{ Swal.showLoading(); } });
+        }
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { method:'POST', headers, body: JSON.stringify(payload) });
+        let data;
+        try { data = await res.json(); } catch(_e){ data = { success: res.ok, error: res.statusText }; }
+        if(window.Swal){ Swal.close(); }
+        await renderTargets(data.targets);
+        if(window.Swal){
+          if(data.success){ await Swal.fire({ icon:'success', title:'Saved' }); }
+          else { await Swal.fire({ icon:'error', title:'Error', text: (data.error||'Save failed') }); }
+        } else {
+          alert(data.success ? 'Saved' : (data.error || 'Error'));
+        }
+      }catch(err){
+        if(window.Swal){ Swal.close(); await Swal.fire({ icon:'error', title:'Error', text: err?.message || 'Save failed' }); }
+        else { alert(err?.message || 'Save failed'); }
+      }
+    });
+
+    // Avatar upload
+    // Show local preview when a file is selected
+    (function(){
+      const fileEl = document.getElementById('avatarFile');
+      const imgEl = document.getElementById('avatarPreview');
+      if(fileEl && imgEl){
+        fileEl.addEventListener('change', ()=>{
+          const f = fileEl.files && fileEl.files[0];
+          if(f){
+            try{ imgEl.src = URL.createObjectURL(f); }catch(_){ /* ignore */ }
+          }
+        });
+      }
+    })();
+
+    document.getElementById('uploadAvatarBtn')?.addEventListener('click', async ()=>{
+      const userObj = await supabase.auth.getUser();
+      const uid = userObj?.data?.user?.id; const email = userObj?.data?.user?.email || '';
+      if(!uid){
+        if(window.Swal){ await Swal.fire({ icon:'info', title:'Please sign in', confirmButtonText:'Go to Login' }).then(r=>{ if(r.isConfirmed) window.location.href='/login'; }); }
+        else { alert('Please sign in'); }
+        return;
+      }
+      const fileEl = document.getElementById('avatarFile'); const f = fileEl && fileEl.files ? fileEl.files[0] : null;
+      if(!f){ if(window.Swal){ await Swal.fire({ icon:'info', title:'Please choose an image' }); } else { alert('Please choose an image'); } return; }
+      try{
+        if(window.Swal){
+          Swal.fire({ title:'Uploading avatar...', allowOutsideClick:false, didOpen:()=>{ Swal.showLoading(); } });
+        }
+        const fd = new FormData();
+        fd.append('file', f, f.name);
+        fd.append('email', email);
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        const res = await fetch(`${BACKEND_URL}/api/user/avatar`, { method: 'POST', body: fd, headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+        const j = await res.json();
+        if(!res.ok || !j?.success){ throw new Error(j?.error || 'Upload failed'); }
+  const url = j.url;
+  const img = document.getElementById('avatarPreview'); if(img) img.src = url;
+  // Also update header avatar immediately if present
+  const headerImg = document.getElementById('avatarImg'); if(headerImg) headerImg.src = url;
+  const headerCardImg = document.getElementById('cardAvatar'); if(headerCardImg) headerCardImg.src = url;
+        if(window.Swal){ Swal.close(); await Swal.fire({ icon:'success', title:'Avatar updated' }); } else { alert('Avatar updated'); }
+      }catch(e){ if(window.Swal){ Swal.close(); await Swal.fire({ icon:'error', title:'Upload failed', text: e?.message || '' }); } else { alert(e?.message || 'Upload failed'); } }
+    });
+
+    async function renderTargets(targets){
+      const targetsEl = document.getElementById('targets');
+      if(!targetsEl) return;
+      if(!targets || Object.keys(targets).length === 0){
+        targetsEl.innerHTML = '<small>No targets yet. Fill the form and click Save.</small>';
+        return;
+      }
+      try{
+        const tpl = await loadTargetsPartial();
+        targetsEl.innerHTML = tpl(targets);
+      }catch(e){
+        targetsEl.innerHTML = '<small class="text-danger">Failed to render targets.</small>';
+      }
+    }
+
+    // Init
+    loadExisting();
+  })();
+</script>

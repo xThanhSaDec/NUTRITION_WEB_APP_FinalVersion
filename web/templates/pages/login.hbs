@@ -1,0 +1,155 @@
+<div class="card">
+  <h2>Login / Sign up</h2>
+  <form id="auth-form">
+    {{!-- <div class="col-12"> --}}
+    <div class="container w-auto mx-auto h-auto">
+    {{!-- <div class="row">    
+      <label>Email</label>
+      <input id="email" type="email" required />
+    </div>
+    <div class="row">    
+    <label>Display name(if signup)</label>
+    <input id="display_name" type="text" placeholder="e.g. John" />
+    </div>
+    <div class="row">
+    <label>Password</label>
+    <input id="password" type="password" required />
+    </div> --}}
+    <div class="mb-3 row">
+      <label for="inputDisplayName" class="col-sm-2 col-form-label">Display Name <h6>(if signup)</h6></label>
+      <div class="col-sm-10">
+        <input type="text" class="form-control" id="display_name" value="John Tran Dan">
+      </div>
+    </div>
+    <div class="mb-3 row">
+      <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
+      <div class="col-sm-10">
+        <input type="email" class="form-control" id="email" value="email@example.com">
+      </div>
+    </div>
+    <div class="mb-3 row">
+      <label for="inputPassword" class="col-sm-2 col-form-label">Password</label>
+      <div class="col-sm-10">
+        <input type="password" class="form-control" id="password">
+      </div>
+    </div>
+    {{!-- </div> --}}
+    <div style="margin-top:12px">
+      <button class="btn" type="submit">Login</button>
+      <button class="btn secondary" id="signup" type="button">Sign up</button>
+      <button class="btn outline" id="googleSignIn" type="button">Sign in with Google</button>
+    </div>
+    </div>
+  </form>
+  <p id="message"></p>
+  <p style="margin-top:8px"><a href="#" id="forgotPassword">Forgot password?</a></p>
+  
+</div>
+
+<script>
+  (function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
+    // Reuse global client to prevent multiple GoTrue instances
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const supabase = window.SUPABASE;
+
+    const form = document.getElementById('auth-form');
+    const signup = document.getElementById('signup');
+    const msg = document.getElementById('message');
+    const googleBtn = document.getElementById('googleSignIn');
+    const forgot = document.getElementById('forgotPassword');
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const emailEl = document.getElementById('email');
+      const passwordEl = document.getElementById('password');
+      const email = emailEl && 'value' in emailEl ? emailEl.value : '';
+      const password = passwordEl && 'value' in passwordEl ? passwordEl.value : '';
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if(error){
+        const raw = error?.message || '';
+        // Friendly hint when provider disabled
+        const hint = /provider is not enabled/i.test(raw) ? ' (Enable Email provider in Supabase Auth > Providers)' : '';
+        if(msg) msg.textContent = raw + hint;
+        return;
+      }
+      if(msg) msg.textContent = 'Logged in';
+      if(!error) window.location.href = '/today';
+    });
+    signup?.addEventListener('click', async ()=>{
+      const emailEl = document.getElementById('email');
+      const passwordEl = document.getElementById('password');
+      const displayEl = document.getElementById('display_name');
+      const email = emailEl && 'value' in emailEl ? emailEl.value : '';
+      const password = passwordEl && 'value' in passwordEl ? passwordEl.value : '';
+      const display_name = displayEl && 'value' in displayEl ? displayEl.value : '';
+      // Try to include display_name in user metadata and also upsert into app 'users' table.
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name } } });
+      if(error){
+        const raw = error?.message || '';
+        const hint = /provider is not enabled/i.test(raw) ? ' (Enable Email provider in Supabase Auth > Providers)' : '';
+        if(msg) msg.textContent = raw + hint;
+        return;
+      }
+      if(msg) msg.textContent = 'Check your email to confirm.';
+      // If user object returned (immediate sign-up), upsert into app users table for display_name and url_image
+      try{
+        const user = data?.user;
+        if(user && user.id){
+          await supabase.from('users').upsert({ user_id: user.id, email, display_name: display_name || null }, { onConflict: 'user_id' });
+        }
+      }catch(e){ /* non-fatal */ }
+    });
+    // Google OAuth
+    googleBtn?.addEventListener('click', async ()=>{
+      if(!googleBtn) return;
+      try{
+        googleBtn.disabled = true;
+        if(msg) msg.textContent = 'Redirecting to Google...';
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/today',
+            queryParams: { prompt: 'consent', access_type: 'offline' }
+          }
+        });
+        if(error){
+          const raw = error?.message || '';
+          const hint = /provider is not enabled/i.test(raw) ? ' (Enable Google provider in Supabase Auth > Providers)' : '';
+          if(msg) msg.textContent = 'Google sign-in failed: ' + raw + hint;
+          googleBtn.disabled = false;
+          return;
+        }
+        // Some environments require manual redirect
+        if(data?.url){
+          window.location.href = data.url;
+        } else {
+          // Fallback: attempt session poll then go to /today
+          setTimeout(async ()=>{
+            const sess = await supabase.auth.getSession();
+            if(sess?.data?.session){ window.location.href = '/today'; }
+            else { if(msg) msg.textContent = 'Waiting for auth callback...'; }
+          }, 800);
+        }
+      }catch(e){
+        if(msg) msg.textContent = 'Unexpected error: ' + (e?.message || String(e));
+        googleBtn.disabled = false;
+      }
+    });
+
+    // Forgot password
+    forgot?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const emailEl = document.getElementById('email');
+      const email = emailEl && 'value' in emailEl ? emailEl.value : '';
+      if(!email){ if(msg) msg.textContent = 'Please enter your email address above.'; return; }
+      try{
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/login' });
+        if(error) msg.textContent = error.message; else msg.textContent = 'Password reset email sent. Check your inbox.';
+      }catch(err){ if(msg) msg.textContent = err?.message || String(err); }
+    });
+  })();
+</script>

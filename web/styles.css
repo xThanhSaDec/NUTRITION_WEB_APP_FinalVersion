@@ -1,0 +1,49 @@
+:root{
+	/* Base palette */
+	--bg:#f6f7fb;--text:#222;--card:#fff;--shadow:0 6px 18px rgba(0,0,0,.06);
+	--primary:#3DAC78;--muted:#95a5a6;--nav:#D8F3DC;--navBorder:#B7E4C7;--navText:#185a3a;
+	/* NutriDish greens */
+	--nd-50:#D8F3DC;--nd-100:#B7E4C7;--nd-200:#95D5B2;--nd-300:#74C69D;--nd-400:#3DAC78;
+}
+[data-theme="dark"]{
+	--bg:#0f1220;--text:#ffffff;--card:#161a2b;--shadow:0 6px 18px rgba(0,0,0,.4);
+	--primary:#74C69D;--muted:#b0b7c3;--nav:#0b0e19;--navBorder:#111726;--navText:#ffffff;
+}
+body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+.nav{display:flex;justify-content:space-between;align-items:center;background:var(--nav);color:var(--navText);padding:12px 20px;border-bottom:1px solid var(--navBorder)}
+.nav a{color:var(--navText);margin-right:12px;text-decoration:none}
+.container{max-width:960px;margin:20px auto;padding:0 16px}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+.btn{padding:10px 14px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer}
+.btn.secondary{background:var(--muted)}
+.footer{padding:20px;text-align:center;color:#185a3a;background:linear-gradient(180deg,var(--nd-50),var(--nd-100));border-top:1px solid var(--nd-100)}
+.progress{height:10px;background:#eee;border-radius:6px;overflow:hidden}
+.progress .bar{height:100%;background:var(--primary)}
+
+/* Navbar (Bootstrap override) */
+.nd-navbar{background-color:var(--nav)!important;border-bottom:1px solid var(--navBorder)}
+.nd-navbar .navbar-brand, .nd-navbar .nav-link{color:var(--navText)!important}
+.nd-navbar .nav-link:hover{color:var(--primary)!important}
+.nd-navbar .navbar-brand .brand-text{color:var(--primary);font-weight:700}
+.nd-navbar .brand-logo{width:32px;height:32px;object-fit:contain;margin-right:8px}
+
+/* Footer links */
+#footer a{color:#185a3a}
+#footer a:hover{color:var(--primary)}
+
+/* Progress bar (Bootstrap) */
+.progress .progress-bar{background-color:var(--primary)}
+
+/* Dark theme specific text overrides for areas with hard-coded colors */
+[data-theme="dark"] body{color:#ffffff}
+[data-theme="dark"] .card{background:var(--card);color:#ffffff}
+[data-theme="dark"] .card *{color:inherit}
+[data-theme="dark"] .navbar, [data-theme="dark"] .navbar *{color:#ffffff!important}
+[data-theme="dark"] .nd-navbar .navbar-brand, [data-theme="dark"] .nd-navbar .nav-link{color:#ffffff!important}
+[data-theme="dark"] #authCard #cardEmail{color:#ffffff!important}
+[data-theme="dark"] .text-muted{color:#e5e7eb!important}
+[data-theme="dark"] .footer{background:linear-gradient(180deg,#101820,#182430);color:#ffffff;border-top:1px solid #223040}
+[data-theme="dark"] .footer a{color:#ffffff}
+[data-theme="dark"] .footer a:hover{color:var(--primary)}
+[data-theme="dark"] .progress{background:#2a3542}
+[data-theme="dark"] .list-group-item{background:#1c2530;color:#ffffff;border-color:#2a3542}

@@ -1,0 +1,326 @@
+<div class="card">
+  <h2><i class="fa-solid fa-upload"></i>Input today dishes</h2>
+  <form id="upload-form" >
+    <input type="file" id="file" accept="image/*" required/>
+    <select id="meal"><option>breakfast</option><option selected>lunch</option><option>dinner</option><option>snack</option></select>
+    <input type="number" id="servings" min="0.25" step="0.25" value="1" />
+    <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i>Detect & Save</button>
+  </form>
+  <p id="msg"></p>
+</div>
+
+<div class="card">
+  {{!-- <h3>Generalize today</h3> --}}
+  <h4><div class="card-title">Generalize Today</div></h4>
+  <div class="row">
+  <div class="col-12 col-md-6 mt-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-borderless align-middle text-center mb-0" style="width:100%">
+        <thead style="background-color:#f8f9fa; font-weight:600;">
+          <tr>
+            <th class="text-start">Nutrition</th>
+            {{!-- <i class="fa-solid fa-cookie me-1"></i>
+            <i class="fa-solid fa-cookie-bite me-1"></i> --}}
+            <th></i>Took in</th>
+            <th></i>Lacking</th>
+          </tr>
+        </thead>
+        <tbody >
+          <tr><td class="text-start"><i class="fa-solid fa-fire me-1"></i>Calories</td><td><strong style="color: green;" id="totCalories">0</strong></td><td><strong style="color: red;" id="lackCalories">-</strong></td></tr>
+          <tr><td class="text-start"><i class="fa-solid fa-drumstick-bite me-1"></i>Protein(g)</td><td><strong style="color: green;" id="totProtein">0</strong></td><td><strong style="color: red;" id="lackProtein">-</strong></td></tr>
+          <tr><td class="text-start"><i class="fa-solid fa-oil-can me-1"></i>Fat(g)</td><td><strong style="color: green;" id="totFat">0</strong></td><td><strong style="color: red;" id="lackFat">-</strong></td></tr>
+          <tr><td class="text-start"><i class="fa-solid fa-bowl-rice me-1"></i>Carbs(g)</td><td><strong style="color: green;" id="totCarbs">0</strong></td><td><strong style="color: red;" id="lackCarbs">-</strong></td></tr>
+          <tr><td class="text-start"><i class="fa-solid fa-leaf me-1"></i>Fiber(g)</td><td><strong style="color: green;" id="totFiber">0</strong></td><td><strong style="color: red;" id="lackFiber">-</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+  {{!-- <div class="fw-semibold mb-1"><i class="fa-solid fa-cookie"></i>Took in</div> --}}
+  {{!-- <div id="totals">
+    <ul style="list-style-type: none; padding: 0; margin: 0;">
+      <li><i class="fa-solid fa-fire"></i>Calories: <strong id="totCalories">0</strong></li>
+      <li><i class="fa-solid fa-drumstick-bite"></i>Protein: <strong id="totProtein">0</strong></li>
+      <li><i class="fa-solid fa-oil-can"></i>Fat: <strong id="totFat">0</strong></li>
+      <li><i class="fa-solid fa-bowl-rice"></i>Carbs: <strong id="totCarbs">0</strong></li>
+      <li><i class="fa-solid fa-leaf"></i>Fiber: <strong id="totFiber">0</strong></li>
+    </ul>
+  </div> --}}
+  </div>
+  {{!-- <div class="col-12 col-md-3">
+  <div class="fw-semibold mb-1"><i class="fa-solid fa-cookie-bite"></i>Lackings</div>
+  <div id="lackings">
+    <ul style="list-style-type: none; padding: 0; margin: 0;">
+      <li><i class="fa-solid fa-fire"></i>Calories: <strong id="lackCalories">-</strong></li>
+      <li><i class="fa-solid fa-drumstick-bite"></i>Protein: <strong id="lackProtein">-</strong></li>
+      <li><i class="fa-solid fa-oil-can"></i>Fat: <strong id="lackFat">-</strong></li>
+      <li><i class="fa-solid fa-bowl-rice"></i>Carbs: <strong id="lackCarbs">-</strong></li>
+      <li><i class="fa-solid fa-leaf"></i>Fiber: <strong id="lackFiber">-</strong></li>
+    </ul>
+  </div>
+  </div> --}}
+  <div class="col-12 col-md-3">
+  <div class="fw-semibold mb-1" id ="totalMealsLabel"><i class="bi bi-fork-knife"></i>Total meals</div>
+  <div id="totalMeals">
+    <ul>
+      <li>Breakfast: <strong id="mealBreakfast">0</strong></li>
+      <li>Lunch: <strong id="mealLunch">0</strong></li>
+      <li>Dinner: <strong id="mealDinner">0</strong></li>
+      <li>Snack: <strong id="mealSnack">0</strong></li>
+    </ul>
+  </div>
+  </div>
+  <div class="col-12 col-md-3">
+    {{!-- <div class="fw-semibold mb-1">Macro pie</div> --}}
+    <canvas id="pieChart" height="200"></canvas>
+    <div id="pieLegend"></div>
+  </div>
+  {{!-- <div class="progress"><div class="bar" id="bar"></div></div>
+  <canvas id="chart" height="auto"></canvas>
+  <div id="status"></div> --}}
+  <div class="mt-1">
+    {{!-- <div class="fw-semibold mb-2">Macro breakdown (per nutrient)</div> --}}
+    <div class="row" id="miniBreakdown">
+      <div class="col-6 col-md-2 mb-3">
+        <div class="small fw-semibold"><i class="fa-solid fa-fire"></i>Calories</div>
+        <canvas id="calChart" height="300"></canvas>
+      </div>
+      <div class="col-6 col-md-2 mb-3">
+        <div class="small fw-semibold"><i class="fa-solid fa-drumstick-bite"></i>Protein</div>
+        <canvas id="protChart" height="300"></canvas>
+      </div>
+      <div class="col-6 col-md-2 mb-3">
+        <div class="small fw-semibold"><i class="fa-solid fa-oil-can"></i>Fat</div>
+        <canvas id="fatChart" height="300"></canvas>
+      </div>
+      <div class="col-6 col-md-2 mb-3">
+        <div class="small fw-semibold"><i class="fa-solid fa-bowl-rice"></i>Carbs</div>
+        <canvas id="carbChart" height="300"></canvas>
+      </div>
+      <div class="col-6 col-md-2 mb-3">
+        <div class="small fw-semibold"><i class="fa-solid fa-leaf"></i>Fiber</div>
+        <canvas id="fiberChart" height="300"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } = window.APP_CONFIG || {};
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const supabase = window.SUPABASE;
+  let chart;
+  let pieChartInst;
+  const miniCharts = {};
+    async function uid(){ const { data } = await supabase.auth.getUser(); return data?.user?.id; }
+    async function ensureProfileOrPrompt(){
+      try{
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if(res.status === 404){
+            if(window.Swal){
+              const ret = await Swal.fire({ title: 'Missing profile', text:'Please complete your profile before using this page.', icon:'warning', confirmButtonText:'Go to Profile' });
+            if(ret.isConfirmed){ window.location.href = '/profile'; }
+          } else {
+              if(confirm('Please complete your profile. Go to Profile?')) window.location.href = '/profile';
+          }
+          return false;
+        }
+        return true;
+      }catch(e){ return true; }
+    }
+
+    document.getElementById('upload-form')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const user_id = await uid();
+      if(!user_id){
+        if(window.Swal){ await Swal.fire({ icon:'info', title:'Please sign in', confirmButtonText:'Go to Login' }).then(r=>{ if(r.isConfirmed) window.location.href='/login'; }); }
+        else { alert('Please sign in'); }
+        return;
+      }
+        const ok = await ensureProfileOrPrompt(); if(!ok) return;
+      const fd = new FormData();
+      fd.append('user_id', user_id);
+      const mealEl = document.getElementById('meal');
+      const servingsEl = document.getElementById('servings');
+      const fileEl = document.getElementById('file');
+      const mealVal = mealEl && 'value' in mealEl ? mealEl.value : 'lunch';
+      const servingsVal = servingsEl && 'value' in servingsEl ? servingsEl.value : '1';
+      fd.append('meal_type', mealVal);
+      fd.append('servings', servingsVal);
+      const f = fileEl && 'files' in fileEl ? fileEl.files && fileEl.files[0] : null;
+      if(!f) return; fd.append('file', f);
+  const sessionObj = await supabase.auth.getSession();
+  const token = sessionObj.data.session?.access_token;
+  const headers = {};
+  if(token){ headers['Authorization'] = `Bearer ${token}`; }
+  else if(user_id){ headers['X-User-Id'] = user_id; }
+      try{
+        if(window.Swal){
+          Swal.fire({ title:'Detecting & saving...', allowOutsideClick:false, didOpen:()=>{ Swal.showLoading(); } });
+        }
+        const res = await fetch(`${BACKEND_URL}/api/meals/log`, { method:'POST', body: fd, headers });
+        let data;
+        try { data = await res.json(); } catch(_e){ data = { success: res.ok, error: res.statusText }; }
+        if(window.Swal){ Swal.close(); }
+        const msgEl = document.getElementById('msg');
+        if(msgEl) msgEl.textContent = data?.success? 'Saved' : (data?.error||'Error');
+        if(window.Swal){
+          if(data?.success){ await Swal.fire({ icon:'success', title:'Saved' }); }
+          else { await Swal.fire({ icon:'error', title:'Failed to save', text: data?.error || '' }); }
+        }
+        loadToday();
+      }catch(err){
+        if(window.Swal){ Swal.close(); await Swal.fire({ icon:'error', title:'Failed to save', text: err?.message || '' }); }
+        else { alert(err?.message || 'Failed to save'); }
+      }
+    });
+
+    async function loadToday(){
+      const ok = await ensureProfileOrPrompt(); if(!ok) return;
+      const user_id = await uid(); if(!user_id) return;
+  const sessionObj = await supabase.auth.getSession();
+  const token = sessionObj.data.session?.access_token;
+  const headers = {};
+  if(token){ headers['Authorization'] = `Bearer ${token}`; }
+  else if(user_id){ headers['X-User-Id'] = user_id; }
+  const res = await fetch(`${BACKEND_URL}/api/meals/today`, { headers });
+      const data = await res.json();
+      console.log('Data:', data);
+  const totals = data.totals || {calories:0,protein:0,fat:0,carbs:0,fiber:0};
+  // debug: quick peek to verify non-zero totals after logging
+  try { console.debug('Today totals payload:', totals, 'logs count:', Array.isArray(data.logs)? data.logs.length : 'n/a'); } catch(_e){}
+      const fmt = (v)=>{
+        const n = Number(v||0);
+        if (!isFinite(n)) return '0';
+        return n >= 100 ? Math.round(n).toString() : (Math.round(n*10)/10).toString();
+      };
+      const setText = (id, val)=>{ const el = document.getElementById(id); if(el) el.textContent = fmt(val); };
+      console.log('Totals:', totals);
+      setText('totCalories', totals.calories);
+      setText('totProtein', totals.protein);
+      setText('totFat', totals.fat);
+      setText('totCarbs', totals.carbs);
+      setText('totFiber', totals.fiber);
+
+      // meal counts by type
+      const logs = Array.isArray(data.logs)? data.logs : [];
+      const mealCounts = { breakfast:0, lunch:0, dinner:0, snack:0 };
+      logs.forEach(r=>{ const t=(r.meal_type||'').toLowerCase(); if(mealCounts.hasOwnProperty(t)) mealCounts[t]++; });
+
+      const mapId = { breakfast:'mealBreakfast', lunch:'mealLunch', dinner:'mealDinner', snack:'mealSnack', totalMealsLabel:'totalMealsLabel' };
+      Object.entries(mapId).forEach(([k,id])=>{ 
+        const el=document.getElementById(id); 
+        if(el) el.textContent = String(mealCounts[k]||0); 
+        const totalMeals = Object.values(mealCounts).reduce((a,b)=>a+b, 0);
+        const totalMealsLabel = document.getElementById('totalMealsLabel');
+        if(totalMealsLabel) totalMealsLabel.innerHTML = "<i class=\"bi bi-fork-knife\"></i>Total meals: "+String(totalMeals);
+        });
+
+      // pie chart (guarded)
+      try{
+        if (window.Chart) {
+          const pieCtx = document.getElementById('pieChart');
+          if (pieCtx) {
+            if (pieChartInst) { try { pieChartInst.destroy(); } catch(_e){} }
+            pieChartInst = new Chart(pieCtx, {
+              type: 'doughnut',
+              data: {
+                labels: ['Protein', 'Fat', 'Carbs', 'Fiber','Calories'],
+                datasets: [{
+                  data: [totals.protein, totals.fat, totals.carbs, totals.fiber, totals.calories],
+                  backgroundColor: ['#16a085', '#c0392b', '#2980b9', '#27ae60', '#e67e22'],
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' }, title: { display: false } }
+              },
+            });
+          }
+        }
+      }catch(err){ console.warn('Pie chart init failed:', err); }
+      const ctx = document.getElementById('chart');
+      const s = data.evaluation || {}; 
+      const missing = s.missing || {};
+
+      // Macro config: label, key, color, axis, position, default max
+      const macros = [
+        { label:'Calories', key:'calories', color:'#e67e22', axis:'yCal', position:'left',  maxBase:2500 },
+        { label:'Protein',  key:'protein',  color:'#16a085', axis:'yProt', position:'right', maxBase:150 },
+        { label:'Fat',      key:'fat',      color:'#c0392b', axis:'yFat', position:'left',  maxBase:100 },
+        { label:'Carbs',    key:'carbs',    color:'#2980b9', axis:'yCarb',position:'right', maxBase:300 },
+        { label:'Fiber',    key:'fiber',    color:'#27ae60', axis:'yFiber',position:'left',  maxBase:50 },
+      ];
+      const labels = macros.map(m=>m.label);
+      const N = labels.length;
+      const arrAt = (i,val)=>{ const a = new Array(N).fill(null); a[i]=val; return a; };
+
+      const ds = [];
+      macros.forEach((m, i)=>{
+        const tookVal = Number(totals[m.key]||0);
+        const missVal = Number(missing[m.key]||0);
+        ds.push({ label:`${m.label} (Took)`, data: arrAt(i, tookVal), backgroundColor: m.color, stack: m.key, yAxisID: m.axis });
+        ds.push({ label:`${m.label} (Missing)`, data: arrAt(i, missVal), backgroundColor: 'rgba(231, 76, 60, 0.8)', stack: m.key, yAxisID: m.axis });
+      });
+
+      
+      // mini per-macro charts
+      const renderMini = (id, label, took, miss, color, maxBase, unit)=>{
+        const c = document.getElementById(id);
+        if(!c || !window.Chart) return;
+        if(miniCharts[id]){ try{ miniCharts[id].destroy(); }catch(_e){} }
+        miniCharts[id] = new Chart(c, {
+          type:'bar',
+          data:{ labels:[label], datasets:[
+            { label:'Took', data:[Number(took||0)], backgroundColor: color },
+            { label:'Missing', data:[Number(miss||0)], backgroundColor:'rgba(231, 76, 60, 0.8)' }
+          ]},
+          options:{
+            responsive:true,
+            plugins:{ legend:{ display:false } },
+            scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, title:{ display:true, text: unit }, min:0, max: Math.max(Number(took||0)+Number(miss||0), maxBase) } }
+          }
+        });
+      };
+      renderMini('calChart', 'Calories', totals.calories, missing.calories, '#e67e22', macros[0].maxBase, 'kcal');
+      renderMini('protChart','Protein',  totals.protein,  missing.protein,  '#16a085', macros[1].maxBase, 'g');
+      renderMini('fatChart', 'Fat',      totals.fat,      missing.fat,      '#c0392b', macros[2].maxBase, 'g');
+      renderMini('carbChart','Carbs',    totals.carbs,    missing.carbs,    '#2980b9', macros[3].maxBase, 'g');
+      renderMini('fiberChart','Fiber',   totals.fiber,    missing.fiber,    '#27ae60', macros[4].maxBase, 'g');
+      //const vals = [totals.calories, totals.protein, totals.fat, totals.carbs, totals.fiber];
+      //if(chart) chart.destroy();
+      //if(ctx) chart = new Chart(ctx, { type:'bar', data:{ labels:['cal','prot','fat','carb','fiber'], datasets:[{ label:'Today', data: vals, backgroundColor:'#3498db' }] }, options:{ responsive:true } });
+      
+      console.log("Totals:", totals, "Missing:", missing);
+      setText('lackCalories', missing.calories);
+      setText('lackProtein', missing.protein);
+      setText('lackFat', missing.fat);
+      setText('lackCarbs', missing.carbs);
+      setText('lackFiber', missing.fiber);
+      const statusEl = document.getElementById('status');
+        if(statusEl) 
+        //statusEl.textContent = s.complete? 'Daily goals met' : ('Missing: ' + Object.entries(s.missing||{}).map(([k,v])=>`${k}:${v}`).join(', '));
+        //statusEl.textContent = s.complete? 'Daily goals met' : ('Missing: ' + Object.entries(s.missing||{}).map(([k,v])=>`${k}:${v}`).join(', '));
+        if (s.complete) {
+          document.querySelector('#lackings').innerHTML = '<p>Daily goals met!</p>';
+        } else {
+          //for (const [key, value] of Object.entries(s.missing || {})) {
+          //  const el = document.getElementById('lack' + key[0].toUpperCase() + key.slice(1));
+          //  if (el) el.textContent = fmt(value);
+          //}
+          //setText('lackCalories', missing.calories);
+          //setText('lackProtein', missing.protein);
+          //setText('lackFat', missing.fat);
+          //setText('lackCarbs', missing.carbs);
+          //setText('lackFiber', missing.fiber);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadToday);
+  })();
+</script>
