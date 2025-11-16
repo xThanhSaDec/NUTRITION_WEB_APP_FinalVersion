@@ -4,6 +4,7 @@ python-dotenv==1.0.1
 supabase==2.6.0
 pybars3==0.9.7
 pillow==10.1.0
+gunicorn==21.2.0
 
 # PyTorch stack installed separately (avoid overriding global index for all packages):
 # Run after base install:
