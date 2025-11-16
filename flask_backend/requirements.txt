@@ -3,11 +3,10 @@ flask-cors==4.0.1
 python-dotenv==1.0.1
 supabase==2.6.0
 pybars3==0.9.7
-pandas==2.1.4
 pillow==10.1.0
 
 # PyTorch stack installed separately (avoid overriding global index for all packages):
 # Run after base install:
 #   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-# Removed unused: tensorflow, keras, httpx, numpy.
+# Removed unused: tensorflow, keras, httpx, numpy, pandas (CSV now parsed via built-in csv).

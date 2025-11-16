@@ -1,8 +1,6 @@
 from __future__ import annotations
-import os
+import os, csv
 from typing import Dict, Any, Optional
-
-import pandas as pd
 
 from .supabase_service import get_supabase_service
 
@@ -17,16 +15,24 @@ class NutritionService:
     def __init__(self) -> None:
         self.use_supabase = os.getenv("USE_SUPABASE_NUTRITION", "false").lower() == "true"
         if not self.use_supabase:
-            csv_path = None
-            for p in CANDIDATE_CSV:
-                if os.path.exists(p):
-                    csv_path = p
-                    break
+            csv_path = next((p for p in CANDIDATE_CSV if os.path.exists(p)), None)
             if not csv_path:
                 raise FileNotFoundError("nutrition_database.csv not found in data/")
-            self.df = pd.read_csv(csv_path)
-            # normalize
-            self.df['dish_name_norm'] = self.df['dish_name'].astype(str).str.strip().str.lower()
+            # Load CSV lightly (avoid pandas). Build list of dicts with normalized key.
+            self._rows = []
+            with open(csv_path, newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    dish = (row.get('dish_name') or '').strip()
+                    row['dish_name_norm'] = dish.lower()
+                    # Convert numeric fields defensively
+                    for k in ['calories','protein','fat','carbs','fiber']:
+                        v = row.get(k)
+                        try:
+                            row[k] = float(v) if v not in (None, '') else 0.0
+                        except Exception:
+                            row[k] = 0.0
+                    self._rows.append(row)
         else:
             # Ensure Supabase client is available
             self.sb = get_supabase_service()
@@ -52,10 +58,10 @@ class NutritionService:
                 "source": r.get('dataset_source', None),
             }
         # CSV fallback
-        row = self.df[self.df['dish_name_norm'] == key].head(1)
-        if row.empty:
+        match = next((r for r in self._rows if r.get('dish_name_norm') == key), None)
+        if not match:
             return {"success": False, "error": f"Nutrition not found for {class_name}"}
-        r = row.iloc[0]
+        r = match
         return {
             "success": True,
             "nutrition": {
