@@ -1,10 +1,17 @@
 FROM python:3.10-slim
-WORKDIR /app
-# System deps (curl for healthcheck & simple fetches)
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements (relative path assumes build context is repo root on Render)
-COPY flask_backend/requirements.txt ./requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# System deps (curl for healthcheck & simple fetches)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements (context is already flask_backend/ on Render)
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
@@ -19,6 +26,9 @@ EXPOSE 8000
 # Healthcheck uses dynamic $PORT so it works both locally and on Render
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Lightweight Gunicorn settings for Render Free (1 worker, 4 threads)
-# Use factory syntax to call create_app()
-CMD gunicorn --factory -w 1 --threads 4 -b 0.0.0.0:$PORT flask_backend.app.flask_app:create_app
+# Configurable Gunicorn settings via env (with safe defaults for Free plan)
+# WEB_WORKERS default 1, WEB_THREADS default 4
+ENV WEB_WORKERS=1 WEB_THREADS=4
+
+# Use factory syntax to call create_app(); shell form allows $PORT expansion
+CMD gunicorn --factory -w ${WEB_WORKERS} --threads ${WEB_THREADS} -b 0.0.0.0:$PORT flask_backend.app.flask_app:create_app
