@@ -22,6 +22,10 @@ COPY ml_models /app/ml_models
 COPY data /app/data
 
 ENV PYTHONPATH=/app
+ENV ENABLE_VN30=true \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    TORCH_DISABLE_GPU_AVAILABILITY=1
 
 # PORT is injected by Render; default fallback for local
 ENV PORT=8000

@@ -105,8 +105,8 @@
         option.value = key;
         option.textContent = `${info.icon} ${info.label}`;
         
-        // Set default selection (prefer resnet_food101)
-        if (key === 'resnet_food101') {
+        // Set default selection (prefer vn30 if available)
+        if (key === 'vn30') {
           option.selected = true;
         }
         
