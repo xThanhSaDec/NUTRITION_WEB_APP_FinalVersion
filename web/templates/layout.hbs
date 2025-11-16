@@ -21,6 +21,41 @@
   <script src="{{supabase_js}}"></script>
   <script src="{{chart_js}}"></script>
   <script src="{{config_js}}"></script>
+  <script>
+    // Global Supabase init + clean OAuth hash after login
+    (function(){
+      try{
+        const cfg = window.APP_CONFIG || {};
+        if (window.supabase && cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY){
+          window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+            cfg.SUPABASE_URL,
+            cfg.SUPABASE_ANON_KEY,
+            { auth: { storageKey: 'nutri-auth' } }
+          );
+          const sb = window.SUPABASE;
+          const hash = window.location.hash || '';
+          if (hash.includes('access_token=')){
+            const params = new URLSearchParams(hash.substring(1));
+            const access_token = params.get('access_token');
+            const refresh_token = params.get('refresh_token');
+            const expires_in = parseInt(params.get('expires_in')||'3600',10);
+            if (access_token){
+              sb.auth.setSession({ access_token, refresh_token, expires_in })
+                .finally(()=>{
+                  try{ history.replaceState({}, document.title, window.location.pathname); }catch(_e){}
+                  if (location.pathname === '/login') { location.replace('/profile'); }
+                });
+            }
+          }
+          sb.auth.onAuthStateChange((event, _session)=>{
+            if (event === 'SIGNED_IN' && (window.location.hash||'').includes('access_token')){
+              try{ history.replaceState({}, document.title, window.location.pathname); }catch(_e){}
+            }
+          });
+        }
+      }catch(e){ console.warn('supabase init/hash handler failed', e); }
+    })();
+  </script>
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
