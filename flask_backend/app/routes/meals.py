@@ -24,8 +24,10 @@ def log_meal():
         except Exception:
             return jsonify({"success": False, "error": "Invalid servings"}), 400
         meal_type = request.form.get('meal_type', 'unspecified')
+        # Optional model selection to align with /api/predict
+        model_key = request.form.get('model')
         f = request.files['file']
-        res = log_meal_controller(g.user_id, meal_type, servings, f.filename, f.read())
+        res = log_meal_controller(g.user_id, meal_type, servings, f.filename, f.read(), model_key=model_key)
         status = 200 if res.get('success') else 500
         return jsonify(res), status
     except Exception as e:

@@ -1,170 +1,188 @@
-{{!-- Hero section --}}
-<div class="card mb-3" style="overflow:hidden">
+<!-- Improved NutriDish Home Page -->
+<div class="card mb-5 shadow-sm border-0 overflow-hidden">
   <div class="row g-0 align-items-center">
-    <div class="col-12 col-md-6 p-4">
-      <h1 class="h2 mb-2">Welcome to NutriDish</h1>
-      <p class="text-muted mb-3">Track your meals, understand your nutrition, and reach your goals — with smart image detection and clear daily targets.</p>
-      <div class="d-flex flex-wrap gap-2">
-        <a href="/upload" class="btn btn-primary"><i class="fa-solid fa-camera me-1"></i>Upload & Detect</a>
-        <a href="/today" class="btn btn-outline-primary"><i class="fa-solid fa-calendar-day me-1"></i>Today</a>
-        <a href="/statistic" class="btn btn-outline-secondary"><i class="fa-solid fa-chart-line me-1"></i>Statistics</a>
-        <a href="/profile" class="btn btn-outline-secondary"><i class="fa-solid fa-user me-1"></i>Profile</a>
+    <div class="col-12 col-md-6 p-5">
+      <h1 class="display-6 fw-bold mb-3">Welcome to <span class="text-primary">NutriDish</span></h1>
+      <p class="text-muted mb-4">Track your meals, understand your nutrition, and reach your goals, which powered by smart food detection and clear daily insights.</p>
+      <div class="d-flex flex-wrap gap-3">
+        <a href="/upload" class="btn btn-primary btn-lg px-4"><i class="fa-solid fa-camera me-2"></i>Upload & Detect</a>
+        <a href="/today" class="btn btn-outline-primary btn-lg px-4"><i class="fa-solid fa-calendar-day me-2"></i>Today</a>
+        <a href="/statistic" class="btn btn-outline-secondary btn-lg px-4"><i class="fa-solid fa-chart-line me-2"></i>Statistics</a>
+        <a href="/profile" class="btn btn-outline-secondary btn-lg px-4"><i class="fa-solid fa-user me-2"></i>Profile</a>
       </div>
     </div>
     <div class="col-12 col-md-6">
-      <img src="https://placehold.co/900x450?text=NutriDish+Hero" alt="NutriDish hero placeholder" style="width:100%;height:100%;object-fit:cover"/>
+      <img src="https://mpcdn.imgix.net/3dpt/2022/08/balanced-nutrition.jpg?fm=pjpg&ixlib=php-3.3.1" class="w-100 h-100 object-fit-cover rounded-0" />
     </div>
   </div>
-  <div class="p-3 small text-muted">Tip: Replace the hero image with your own banner in this file.</div>
-  </div>
+  {{!-- <div class="p-3 small text-muted bg-light border-top">Tip: Replace this hero image with your own banner.</div> --}}
+</div>
 
-{{!-- Features section --}}
-<div class="card mb-3">
-  <div class="card-header">Why NutriDish</div>
-  <div class="p-3">
-    <div class="row g-3">
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Smart+Detection" alt="Smart detection placeholder" style="width:100%;height:160px;object-fit:cover"/>
+<!-- Features -->
+<div class="card mb-5 shadow-sm border-0">
+  <div class="bg-white fw-semibold fs-5"><h4>Why We Should Use NutriDish?</h4></div>
+  <div class="p-4">
+    <div class="row g-4">
+      {{! Feature item template }}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Home_1_Thumb.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold mb-1"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Smart detection</div>
-            <div class="text-muted small">Upload a food photo — we detect the dish and estimate calories, macros, and fiber.</div>
+            <div class="fw-semibold mb-1"><i class="fa-solid fa-wand-magic-sparkles me-1 text-primary"></i>Smart detection</div>
+            <p class="text-muted small mb-0">Upload a food photo — NutriDish detects dish name and nutrition instantly.</p>
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Track+Your+Day" alt="Track your day placeholder" style="width:100%;height:160px;object-fit:cover"/>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Home_2_Thumb.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold mb-1"><i class="fa-solid fa-list-check me-1"></i>Track your day</div>
-            <div class="text-muted small">See totals, lackings, and macro breakdowns for breakfast, lunch, dinner, and snacks.</div>
+            <div class="fw-semibold mb-1"><i class="fa-solid fa-list-check me-1 text-primary"></i>Track your day</div>
+            <p class="text-muted small mb-0">View totals, deficiencies, and macro breakdowns by meal type.</p>
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Insights+%26+Targets" alt="Insights and targets placeholder" style="width:100%;height:160px;object-fit:cover"/>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Home_3_Thumb.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold mb-1"><i class="fa-solid fa-bullseye me-1"></i>Insights & targets</div>
-            <div class="text-muted small">Get personalized daily targets and time-series trends for calories and macros.</div>
+            <div class="fw-semibold mb-1"><i class="fa-solid fa-bullseye me-1 text-primary"></i>Insights & targets</div>
+            <p class="text-muted small mb-0">Personalized daily targets + historical trends for calories and macros.</p>
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6 col-lg-3">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Simple+%26+Secure" alt="Simple and secure placeholder" style="width:100%;height:160px;object-fit:cover"/>
+
+      {{!-- <div class="col-12 col-md-6 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="https://placehold.co/600x360?text=Simple+%26+Secure" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold mb-1"><i class="fa-solid fa-shield-halved me-1"></i>Simple & secure</div>
-            <div class="text-muted small">Sign in and sync safely. Same-origin API avoids browser CORS/PNA headaches.</div>
+            <div class="fw-semibold mb-1"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Simple & secure</div>
+            <p class="text-muted small mb-0">Sign in safely. Same-origin API avoids CORS/PNA problems entirely.</p>
           </div>
         </div>
-      </div>
+      </div> --}}
+
     </div>
   </div>
 </div>
 
-{{!-- How it works --}}
-<div class="card mb-3">
-  <div class="card-header">How it works</div>
-  <div class="p-3">
-    <div class="row g-3 align-items-stretch">
+<!-- How it works -->
+<div class="card mb-5 shadow-sm border-0">
+  <div class="bg-white fw-semibold fs-5"><h4>How it works</h4></div>
+  <div class="p-4">
+    <div class="row g-4">
       <div class="col-12 col-md-4">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Step+1" alt="Step 1 placeholder" style="width:100%;height:160px;object-fit:cover"/>
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Me1.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold">1) Upload a dish photo</div>
-            <div class="small text-muted">Use Upload to send a picture. We’ll suggest a dish name and nutrition.</div>
+            <div class="fw-semibold mb-1">1) Upload a dish photo</div>
+            <p class="text-muted small mb-0">Send a picture — we suggest a dish name and estimate nutrition.</p>
           </div>
         </div>
       </div>
+
       <div class="col-12 col-md-4">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Step+2" alt="Step 2 placeholder" style="width:100%;height:160px;object-fit:cover"/>
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Me2.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold">2) Save to your day</div>
-            <div class="small text-muted">Pick meal type and servings, then save. We update your daily totals.</div>
+            <div class="fw-semibold mb-1">2) Save to your day</div>
+            <p class="text-muted small mb-0">Choose meal type & servings — your daily totals update instantly.</p>
           </div>
         </div>
       </div>
+
       <div class="col-12 col-md-4">
-        <div class="card h-100">
-          <img src="https://placehold.co/600x360?text=Step+3" alt="Step 3 placeholder" style="width:100%;height:160px;object-fit:cover"/>
+        <div class="card h-100 shadow-sm border-0 rounded-3">
+          <img src="/app/assets/Me3.png" class="w-100" style="height:170px;object-fit:cover" />
           <div class="p-3">
-            <div class="fw-semibold">3) Review insights</div>
-            <div class="small text-muted">Check Today and Statistics to see progress vs targets and trends.</div>
+            <div class="fw-semibold mb-1">3) Review insights</div>
+            <p class="text-muted small mb-0">Check Today & Statistics for progress vs targets and trends.</p>
           </div>
         </div>
       </div>
     </div>
-    <div class="text-center mt-3">
-      <a href="/upload" class="btn btn-primary"><i class="fa-solid fa-bolt me-1"></i>Get started</a>
+
+    <div class="text-center mt-4">
+      <a href="/upload" class="btn btn-primary btn-lg px-4"><i class="fa-solid fa-bolt me-2"></i>Get started</a>
     </div>
   </div>
 </div>
 
-{{!-- Nutrition primer (educational content) --}}
-<div class="card">
-  <div class="card-header">What is Nutrition?</div>
-  <div class="p-3" role="article">
-    <p><strong>Nutrition</strong> is the study of food and how it affects the health and growth of the body. <strong>Nutrients</strong> are substances found in foods that our bodies use to grow, reproduce and survive.</p>
-    <p>There are <strong>6 major nutrients</strong> we get from food:</p>
+<!-- Nutrition primer -->
+<div class="card shadow-sm border-0">
+  <div class="bg-white fw-semibold fs-5">
+    <h4 class="p-3 m-0">What is Nutrition?</h4>
+  </div>
 
-    <ol class="nutrient-list">
-      <li class="nutrient-item">
-        <h4>Proteins</h4>
-        <p>Proteins are important for growth and development. They also help your body repair tissue, carry oxygen, digest foods, and regulate hormones.</p>
-        <p><strong>Sources:</strong> meat, legumes (beans, peas, lentils), nuts, seafood, and eggs.</p>
+  <img 
+    src="https://www.mlchc.org/sites/default/files/styles/max_650x650/public/2022-03/nutrition_image2.jpg?itok=fUi0J40D" 
+    class="w-100" 
+    style="height:auto; object-fit:cover;" 
+  />
+
+  <div class="p-4 lh-lg">
+    <p>
+      <strong>Nutrition</strong> is the science of how the body uses food for energy, growth, and overall well-being. 
+      What we eat influences everything from our mood and energy levels to our long-term health. 
+      A balanced diet provides the fuel and building blocks the body needs to function properly.
+    </p>
+
+    <p>There are <strong>six essential nutrients</strong> that play different but equally important roles:</p>
+
+    <ol class="ps-3">
+      <li class="mb-3">
+        <h5 class="fw-semibold">Proteins: </h5>
+        <h6 class="text-muted mb-1">
+          Build and repair tissues, maintain muscle mass, create enzymes and hormones, 
+          and support a strong immune system.
+        </h6>
       </li>
 
-      <li class="nutrient-item">
-        <h4>Carbohydrates</h4>
-        <p>Carbohydrates (a.k.a. carbs) are used for energy. Your body breaks carbs down into <em>glucose</em> which your cells use for energy.</p>
-        <p><strong>Sources:</strong> pasta, bread, rice, potatoes, cereals, fruit, milk, sugar.</p>
+      <li class="mb-3">
+        <h5 class="fw-semibold">Carbohydrates: </h5>
+        <h6 class="text-muted mb-1">
+          The body’s main energy source. Carbs break down into glucose, 
+          which fuels the brain, muscles, and every cell in the body.
+        </h6>
       </li>
 
-      <li class="nutrient-item">
-        <h4>Lipids (a.k.a. fats)</h4>
-        <p>Fats store energy, protect organs, support cell growth, and help your body absorb nutrients. There are two types: saturated (less healthy) and unsaturated (healthier).</p>
-        <p><strong>Sources of unsaturated fats:</strong> oil, nuts, seeds, avocados, salmon.</p>
+      <li class="mb-3">
+        <h5 class="fw-semibold">Lipids (Fats): </h5>
+        <h6 class="text-muted mb-1">
+          Provide long-lasting energy, protect vital organs, help absorb fat-soluble vitamins 
+          (A, D, E, K), and support healthy cell function.
+        </h6>
       </li>
 
-      <li class="nutrient-item">
-        <h4>Vitamins</h4>
-        <p>Vitamins support many bodily functions. Examples:</p>
-        <ul>
-          <li><strong>B vitamins:</strong> help release energy from carbs and fats, break down proteins, and transport oxygen.</li>
-          <li><strong>Vitamin A:</strong> important for vision, growth, cell division, reproduction, and immunity.</li>
-          <li><strong>Vitamin C:</strong> needed for forming blood vessels, cartilage, muscle, collagen, healing and iron absorption.</li>
-          <li><strong>Vitamin D:</strong> needed for building and maintaining healthy bones.</li>
-          <li><strong>Vitamin K:</strong> helps make proteins for blood clotting and bone building.</li>
-        </ul>
+      <li class="mb-3">
+        <h5 class="fw-semibold">Vitamins: </h5>
+        <h6 class="text-muted mb-1">
+          Regulate body processes—support immunity, skin health, vision, healing, and metabolism. 
+          Each vitamin has unique benefits.
+        </h6>
       </li>
 
-      <li class="nutrient-item">
-        <h4>Minerals</h4>
-        <p>Important minerals include:</p>
-        <ul>
-          <li><strong>Potassium:</strong> helps kidneys, heart, muscles and nerves work properly.</li>
-          <li><strong>Sodium:</strong> helps nerves and muscles function and regulates fluid levels.</li>
-          <li><strong>Calcium:</strong> forms bones and teeth.</li>
-          <li><strong>Phosphorus:</strong> contributes to healthy bones and DNA/RNA formation.</li>
-          <li><strong>Magnesium:</strong> supports muscle/nerve function and energy production.</li>
-          <li><strong>Zinc:</strong> supports immune system and metabolism.</li>
-          <li><strong>Iron:</strong> needed to form red blood cells.</li>
-        </ul>
+      <li class="mb-3">
+        <h5 class="fw-semibold">Minerals: <h6 class="text-muted mb-1">Strengthen bones and teeth, keep muscles and nerves working, and help in blood formation and hormone production.
+        </h6></h5>
+        
       </li>
 
-      <li class="nutrient-item">
-        <h4>Water</h4>
-        <p>Water is essential — human bodies are ~60% water. It helps regulate temperature, lubricate joints, protect the spinal cord, and remove wastes.</p>
+      <li class="mb-1">
+        <h5 class="fw-semibold">Water: <h6 class="text-muted mb-1">Essential for every function in the body—temperature control, digestion, nutrient transport, joint lubrication, and removing waste.
+        </h6></h5>
+        
       </li>
     </ol>
 
-    <p>As you can see, each of these nutrients plays an important role in your health. Research shows people who eat healthier tend to live longer and have lower risk of serious diseases such as heart disease, type 2 diabetes, and obesity.</p>
-
-    <div class="source">
-      <p><strong>So where can I learn how to eat a nutritious diet?</strong></p>
-      <p>A great place to start is <a href="https://www.myplate.gov" target="_blank" rel="noopener noreferrer">MyPlate.gov</a> — it helps you understand how much of each food group to eat each day. You can also stop by the Quincy Student Health and Wellness Center for help.</p>
-    </div>
+    <p class="mt-4">
+      When these nutrients are consumed in the right balance, they help maintain a healthy weight, 
+      boost immunity, improve concentration, and reduce the risk of chronic diseases 
+      such as heart disease, diabetes, and hypertension. 
+      Good nutrition isn’t just about eating enough—it’s about eating wisely.
+    </p>
   </div>
 </div>
+

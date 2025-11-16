@@ -1,82 +1,156 @@
-# 🍽️ Food Recognition & Nutrition Web Application
+# 🍽️ NutriDish – Food Recognition & Nutrition Tracker
 
-An advanced AI-powered web application that combines computer vision and nutritional science to identify food items from images and provide comprehensive nutritional information.
+NutriDish nhận diện món ăn từ ảnh (PyTorch ViT / ResNet) và cung cấp thông tin dinh dưỡng + mục tiêu hằng ngày. Backend Flask phục vụ API và render Handlebars SSR, Supabase dùng cho Auth, lưu trữ ảnh và dữ liệu người dùng.
 
-## 📖 Project Overview
+## 📦 Thành phần chính
 
-This application uses a trained ResNet50 deep learning model to recognize 131 different food items (101 international dishes + 30 Vietnamese traditional dishes) and provides detailed nutritional analysis including calories, protein, fat, carbohydrates, and fiber content.
+| Layer           | Công nghệ                    | Vai trò                                          |
+| --------------- | ---------------------------- | ------------------------------------------------ |
+| Backend         | Flask + flask-cors           | API REST + render template SSR                   |
+| Auth/DB/Storage | Supabase                     | Auth JWT, bảng `users`/`food_logs`, bucket ảnh   |
+| Templates       | Handlebars (pybars3)         | Layout + partials + pages `.hbs`                 |
+| ML Inference    | PyTorch (torch, torchvision) | Load model ViT / ResNet (file `.pth`)            |
+| Nutrition Data  | CSV (Pandas)                 | Fallback dinh dưỡng nếu không dùng bảng Supabase |
 
-## 🏗️ Architecture
-
-### Backend (Flask) - Port 8000
-
-- This branch provides a Flask backend that also serves a static Handlebars frontend under `/app/*`.
-- **POST /api/predict**: Image upload and food recognition
-- **POST /api/user/profile**: Save user age/weight/height/gender/activity and calculated targets
-- **GET /api/user/profile**: Get profile and targets
-- **POST /api/meals/log**: Upload image, recognize food, store nutrition log + image to Supabase
-- **GET /api/meals/today**: Today logs, totals, and adequacy evaluation
-- **GET /api/meals/history**: Range logs aggregated by day
-- **GET /api/streak**: Current streak of meeting daily goals
-- **NEW: POST /api/user/profile**: Save user age/weight/height/gender/activity and calculated targets
-- **NEW: GET /api/user/profile**: Get profile and targets
-- **NEW: POST /api/meals/log**: Upload image, recognize food, store nutrition log + image to Supabase
-- **NEW: GET /api/meals/today**: Today logs, totals, and adequacy evaluation
-- **NEW: GET /api/streak**: Current streak of meeting daily goals
-- **Automatic API documentation**: Available at `/docs`
-
-### Frontend (Handlebars, HTML/CSS/JS)
-
-- Static site in `web/` served by Flask:
-  - `index.html` (home), `login.html`, `profile.html`, `today.html`, `history.html`
-  - Handlebars templates inside each page for easy editing
-  - Supabase JS + Chart.js via CDN
-  - Pages: `index.html`, `login.html`, `profile.html`, `today.html`, `history.html`, `upload.html`
-  - Handlebars page templates in `web/templates/pages/*.hbs` rendered client-side via `web/js/pages.js`
-  - Partials in `web/templates/partials/*.hbs` (header, footer, targets, totals) loaded via `web/js/partials.js`
-
-### ML Model
-
-- **Architecture**: ResNet50 Convolutional Neural Network
-- **Training**: Transfer learning on Food-101 + Vietnamese dishes dataset
-- **Input**: 224×224×3 RGB images
-- **Output**: 131 food categories with confidence scores
-
-##Project Structure
+## 📁 Cấu trúc (rút gọn)
 
 ```
-foodapp/
-│
-├── backend/                         # FastAPI Backend
-│   ├── app/
-│   │   ├── main.py                  # FastAPI entry point
-│   │   ├── routes/
-│   │   │   ├── predict.py           # Prediction endpoints
-│   │   │   ├── nutrition.py         # Nutrition endpoints
-│   │   │   └── aboutus.py           # About endpoints
-│   │   ├── models/                  # Pydantic schemas
-│   │   │   ├── predict_model.py
-│   │   │   └── nutrition_model.py
-│   │   ├── services/                # Business logic
-│   │   │   ├── inference_service.py # ML model handling
-│   │   │   └── nutrition_service.py # Nutrition database
-│   │   └── ml_models/               # ML assets
-│   │       ├── best_model_phase2.keras
-│   │       └── final_class_mapping.json
-│   └── requirements.txt
-│
-├── frontend/                        # Streamlit Frontend
-│   ├── streamlit_app.py             # Main page
-│   ├── pages/
-│   │   ├── 1_Predict.py             # Prediction interface
-│   │   └── 2_AboutUs.py             # Team information
-│   └── requirements.txt
-│
-├── data/
-│   └── nutrition_database.csv       # Nutrition database
-│
-└── README.md                        # This file
+flask_backend/
+  app/
+    flask_app.py            # App factory + routes trang
+    routes/                 # API endpoints (health, user, meals, predict, etc.)
+    controllers/            # Logic kết hợp service + request
+    middlewares/auth.py     # Xác thực Supabase token / chế độ dev
+    services/
+      inference_service.py  # PyTorch model load & predict
+      nutrition_service.py  # Đọc CSV hoặc Supabase
+      nutrition_goal_service.py  # Tính target dinh dưỡng
+      supabase_service.py   # Wrapper supabase-py
+      templating.py         # Render Handlebars layout + pages
+web/
+  assets/                   # Ảnh tĩnh, favicon, logo
+  templates/partials/*.hbs  # header, footer, components
+  templates/pages/*.hbs     # Các trang (login, today, upload, ...)
+  config.js                 # Config Supabase phía client
+ml_models/ *.pth            # Trained PyTorch weights
+data/nutrition_database.csv # Dữ liệu dinh dưỡng cục bộ
 ```
+
+## 🚀 Chạy nhanh (Local)
+
+Yêu cầu: Python 3.10+, pip.
+
+```bash
+python -m venv .venv
+./.venv/Scripts/activate  # Windows PowerShell
+pip install -r flask_backend/requirements.txt
+python -m flask_backend.app.flask_app
+```
+
+Truy cập: http://localhost:8000
+
+## 🔐 Cấu hình Supabase
+
+Tạo project Supabase rồi đặt biến môi trường (file `.env` ở thư mục gốc hoặc `flask_backend/.env`):
+
+```
+SUPABASE_URL=your-project-url
+SUPABASE_SERVICE_ROLE_KEY=service-role-key
+SUPABASE_BUCKET=food-uploads
+REQUIRE_JWT=true
+```
+
+Chạy `supabase/schema.sql` trong SQL editor để tạo bảng/policy.
+
+Phía client (`web/config.js`):
+
+```js
+window.APP_CONFIG = {
+  BACKEND_URL: window.location.origin,
+  SUPABASE_URL: "https://xxxx.supabase.co",
+  SUPABASE_ANON_KEY: "anon-public-key",
+};
+```
+
+## 🧠 Mô hình ML
+
+- Hai cấu hình: `resnet_food101` (ResNet50) và `vn30` (ViT B/16 tùy biến).
+- File trọng số đặt trong `ml_models/` (ví dụ `best_food101_model.pth`).
+- Service `inference_service.py` tự dò path và cache model.
+
+## 🔄 Dự đoán ảnh
+
+Endpoint (ví dụ): `POST /api/predict` multipart form: `file`.
+Kết quả: tên món ăn (top-1), danh sách top-5 và độ tự tin.
+
+## 📊 Dinh dưỡng & Mục tiêu
+
+- `nutrition_service.py`: đọc từ CSV hoặc bảng `nutrition` Supabase (qua biến `USE_SUPABASE_NUTRITION=true`).
+- `nutrition_goal_service.py`: tính toán TDEE + macro target.
+- Các API meals lưu log, tổng hợp ngày, streak.
+
+## 🧾 Dependencies (đã tối giản)
+
+`flask_backend/requirements.txt`:
+
+```
+Flask
+flask-cors
+python-dotenv
+supabase
+pybars3
+pandas
+pillow
+torch (CPU)
+torchvision (CPU)
+torchaudio (CPU)
+```
+
+ĐÃ BỎ: tensorflow, keras, httpx, numpy (numpy chỉ dùng gián tiếp qua torch/pandas).
+
+## 🧪 Kiểm tra nhanh
+
+```bash
+curl http://localhost:8000/health
+```
+
+## 🐳 Docker (tùy chọn)
+
+```bash
+docker compose up --build
+```
+
+Ứng dụng tại: http://localhost:8000
+
+## ❌ Gỡ bỏ gói thừa (nếu đã cài trước đó)
+
+```bash
+pip uninstall -y tensorflow keras httpx
+```
+
+## 🔧 Troubleshooting rút gọn
+
+- 404 model: kiểm tra tên file `.pth` trong `ml_models/`.
+- Lỗi Supabase Auth: kiểm tra `SUPABASE_SERVICE_ROLE_KEY` và thời gian hệ thống.
+- Ảnh không hiển thị: đảm bảo đường dẫn `/app/assets/...` (Flask phục vụ `web/`).
+
+## 👥 Đội ngũ
+
+Tran Dinh Khuong – ML / Backend  
+Nguyen Nhat Phat – API / DB  
+Tran Huynh Xuan Thanh – Frontend / UI  
+Supervisor: Assoc. Prof. Dr. Hoang Van Dung
+
+## 📌 Định hướng tương lai
+
+- Multi-food detection
+- Ứng dụng di động
+- Recipe & barcode
+- Voice commands
+
+---
+
+Enjoy NutriDish!
 
 ## Quick Start
 
@@ -183,38 +257,12 @@ Frontend will be available at: http://localhost:8501
 - **CORS Enabled**: Ready for frontend integration
 - **Error Handling**: Comprehensive error responses
 
-## Technical Details
+## Technical Notes
 
-### Machine Learning
-
-- **Model**: ResNet50 with custom classification head
-- **Framework**: TensorFlow/Keras
-- **Input Size**: 224×224×3 RGB images
-- **Preprocessing**: Automatic resize and normalization
-- **Fallback Strategy**: Multiple model loading approaches
-
-### Backend Technology
-
-- **Framework**: FastAPI with async support
-- **API Documentation**: Automatic OpenAPI/Swagger generation
-- **File Upload**: Multipart form data handling
-- **Data Validation**: Pydantic models for request/response
-- **CORS**: Cross-origin resource sharing enabled
-
-### Frontend Technology
-
-- **Framework**: Streamlit for rapid web app development
-- **Multi-page**: Native Streamlit pages system
-- **Responsive**: Mobile-friendly interface
-- **Real-time**: Live API integration
-- **Styling**: Custom CSS for enhanced UI
-
-### Data Management
-
-- **Nutrition Database**: CSV-based storage with Pandas processing
-- **Class Mapping**: JSON file for model output interpretation
-- **Caching**: Efficient data retrieval and model caching
-- **Fuzzy Matching**: Intelligent dish name matching
+- Flask render SSR: `templating.py` cung cấp biến script CDN (Supabase, Chart.js, Handlebars).
+- Auth linh hoạt: chế độ dev có thể bỏ JWT (`REQUIRE_JWT=false`) và dùng header `X-User-Id`.
+- Supabase Storage: upload file tạm rồi gọi API storage (xử lý trường hợp client yêu cầu path file).
+- Timezone xử lý logs: chuẩn hóa UTC rồi lọc lại theo local timezone.
 
 ## Usage Instructions
 
@@ -318,12 +366,11 @@ streamlit run streamlit_app.py
 - Verify image size (<10MB)
 - Ensure image is not corrupted
 
-### Performance Optimization
+### Hiệu năng
 
-- **First prediction**: May be slower due to model loading
-- **Subsequent predictions**: Cached model for faster processing
-- **Memory usage**: Monitor system resources with large models
-- **GPU acceleration**: Automatic if CUDA is available
+- Lần dự đoán đầu: tải model (~vài giây CPU).
+- Cache model trong `_model_cache` giảm độ trễ các request sau.
+- Tối ưu thêm: preload model khi app khởi động nếu cần.
 
 ## Development Team
 
@@ -341,14 +388,12 @@ streamlit run streamlit_app.py
 - **API Endpoints**: 12 endpoints
 - **Technologies Used**: 8+ frameworks and libraries
 
-## Future Enhancements
+## Future Enhancements (detail)
 
-- **Object Detection**: Multiple food items in one image
-- **Mobile App**: iOS and Android applications
-- **User Accounts**: Personal nutrition tracking
-- **Recipe Integration**: Cooking instructions and ingredients
-- **Barcode Scanning**: Packaged food recognition
-- **Voice Commands**: Audio-based interaction
+- Multi-item detection (YOLO / DETR).
+- Personal goals history & recommendations ML.
+- Recipe parsing & ingredient macro aggregation.
+- Offline mobile capture + sync.
 
 ## License
 

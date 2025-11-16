@@ -2,6 +2,9 @@
   <h2><i class="fa-solid fa-upload"></i>Input today dishes</h2>
   <form id="upload-form" >
     <input type="file" id="file" accept="image/*" required/>
+    <select id="modelSelect" class="form-select d-inline-block" style="width:auto;vertical-align:middle;margin-left:8px;">
+      <option value="" disabled>Loading models...</option>
+    </select>
     <select id="meal"><option>breakfast</option><option selected>lunch</option><option>dinner</option><option>snack</option></select>
     <input type="number" id="servings" min="0.25" step="0.25" value="1" />
     <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i>Detect & Save</button>
@@ -116,6 +119,36 @@
   let chart;
   let pieChartInst;
   const miniCharts = {};
+    // Model selection support (same as Upload page)
+    const modelSelect = document.getElementById('modelSelect');
+    let availableModels = {};
+    const MODEL_INFO = {
+      'vn30': { label: 'Vietnamese Cuisine', badge: 'bg-success', icon: '🇻🇳' },
+      'resnet_food101': { label: 'Global Cuisine', badge: 'bg-info', icon: '' }
+    };
+    async function loadAvailableModels(){
+      try{
+        const res = await fetch(`${BACKEND_URL}/api/predict/models`);
+        if(!res.ok) throw new Error('Failed to load models');
+        const data = await res.json();
+        if(data.success && data.models){ availableModels = data.models; populateModelSelect(); }
+      }catch(err){
+        console.error('Error loading models:', err);
+        if(modelSelect) modelSelect.innerHTML = '<option value="resnet_food101" selected>Global Cuisine</option>';
+      }
+    }
+    function populateModelSelect(){
+      if(!modelSelect) return;
+      modelSelect.innerHTML = '';
+      for(const [key, config] of Object.entries(availableModels)){
+        const info = MODEL_INFO[key] || { label: config.name, badge: 'bg-secondary', icon: '🍽️' };
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `${info.icon} ${info.label}`;
+        if(key === 'resnet_food101') opt.selected = true;
+        modelSelect.appendChild(opt);
+      }
+    }
     async function uid(){ const { data } = await supabase.auth.getUser(); return data?.user?.id; }
     async function ensureProfileOrPrompt(){
       try{
@@ -152,6 +185,8 @@
       const servingsVal = servingsEl && 'value' in servingsEl ? servingsEl.value : '1';
       fd.append('meal_type', mealVal);
       fd.append('servings', servingsVal);
+      const selectedModel = (modelSelect && modelSelect.value) || 'resnet_food101';
+      fd.append('model', selectedModel);
       const f = fileEl && 'files' in fileEl ? fileEl.files && fileEl.files[0] : null;
       if(!f) return; fd.append('file', f);
   const sessionObj = await supabase.auth.getSession();
@@ -322,5 +357,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', loadToday);
+    // Also load available models for selection on page load
+    document.addEventListener('DOMContentLoaded', loadAvailableModels);
   })();
 </script>
