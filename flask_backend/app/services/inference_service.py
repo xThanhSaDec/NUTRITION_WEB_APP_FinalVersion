@@ -1,6 +1,7 @@
 from __future__ import annotations
 import io
 import os
+import time
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, Tuple
 
@@ -15,9 +16,10 @@ try:
     import torchvision.transforms as transforms
     from torchvision.transforms import InterpolationMode
     _HAS_TORCH = True
-except Exception:
+except Exception as _e:
     torch = None
     _HAS_TORCH = False
+    print(f"[inference] PyTorch import failed: {_e}")
     raise RuntimeError("PyTorch is required but not installed")
 
 # Default locations for models
@@ -155,15 +157,27 @@ def _ensure_model_loaded(model_key: str) -> _ModelState:
         raise RuntimeError("PyTorch not installed but required for this model")
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    start_load = time.time()
     state.device = device
     
     arch = config['architecture']
-    if arch == 'vit_b_16':
-        state.model, state.class_map = _load_pytorch_vit(model_path, device)
-    elif arch == 'resnet50':
-        state.model, state.class_map = _load_pytorch_resnet(model_path, device)
-    else:
-        raise ValueError(f"Unknown architecture: {arch}")
+    try:
+        if arch == 'vit_b_16':
+            state.model, state.class_map = _load_pytorch_vit(model_path, device)
+        elif arch == 'resnet50':
+            state.model, state.class_map = _load_pytorch_resnet(model_path, device)
+        else:
+            raise ValueError(f"Unknown architecture: {arch}")
+    except RuntimeError as re:
+        if 'out of memory' in str(re).lower():
+            raise RuntimeError("Model load OOM: consider removing large model or using smaller architecture") from re
+        raise
+    load_dur = (time.time() - start_load) * 1000
+    try:
+        fsz = os.path.getsize(model_path)
+    except Exception:
+        fsz = -1
+    print(f"[inference] Loaded model '{model_key}' arch={arch} size={fsz} bytes in {load_dur:.1f}ms device={device}")
     
     # Cache the loaded model
     _model_cache[model_key] = state
@@ -270,3 +284,30 @@ def get_available_models() -> Dict[str, Dict[str, str]]:
         }
         for key, config in MODEL_CONFIGS.items()
     }
+
+def get_model_status() -> Dict[str, Dict[str, Any]]:
+    out: Dict[str, Dict[str, Any]] = {}
+    for key, cfg in MODEL_CONFIGS.items():
+        # Existence
+        found_path = None
+        for base in CANDIDATE_MODEL_DIRS:
+            cand = os.path.join(base, cfg['file'])
+            if os.path.exists(cand):
+                found_path = cand
+                break
+        size = None
+        if found_path:
+            try:
+                size = os.path.getsize(found_path)
+            except Exception:
+                size = None
+        loaded = key in _model_cache and _model_cache[key].model is not None
+        out[key] = {
+            'architecture': cfg['architecture'],
+            'file': cfg['file'],
+            'exists': bool(found_path),
+            'path': found_path,
+            'size_bytes': size,
+            'loaded': loaded,
+        }
+    return out
