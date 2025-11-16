@@ -30,5 +30,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl 
 # WEB_WORKERS default 1, WEB_THREADS default 4
 ENV WEB_WORKERS=1 WEB_THREADS=4
 
-# Use factory syntax to call create_app(); shell form allows $PORT expansion
-CMD gunicorn --factory -w ${WEB_WORKERS} --threads ${WEB_THREADS} -b 0.0.0.0:$PORT flask_backend.app.flask_app:create_app
+# Gunicorn loads app from wsgi module (no --factory for compatibility)
+CMD gunicorn -w ${WEB_WORKERS} --threads ${WEB_THREADS} -b 0.0.0.0:$PORT flask_backend.wsgi:app
