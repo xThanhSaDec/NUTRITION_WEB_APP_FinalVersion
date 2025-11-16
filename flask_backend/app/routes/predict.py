@@ -1,6 +1,6 @@
 from __future__ import annotations
 from flask import Blueprint, request, jsonify
-from app.services.inference_service import get_inference_service, get_available_models  # type: ignore
+from app.services.inference_service import get_inference_service, get_available_models, get_model_status  # type: ignore
 from app.services.nutrition_service import get_nutrition_service  # type: ignore
 
 bp = Blueprint('predict', __name__, url_prefix='/api')
@@ -14,6 +14,13 @@ def list_models():
             "success": True,
             "models": models
         })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@bp.get('/predict/status')
+def model_status():
+    try:
+        return jsonify({"success": True, "models": get_model_status()})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -60,8 +67,9 @@ def predict():
         try:
             infer = get_inference_service(model_key)
         except Exception as e:
+            print(f"[predict] model load failed key={model_key} err={e}")
             return jsonify({
-                "success": False, 
+                "success": False,
                 "error": f"Failed to load model '{model_key}': {str(e)}"
             }), 500
         
