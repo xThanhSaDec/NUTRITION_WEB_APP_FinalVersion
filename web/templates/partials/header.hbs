@@ -1,7 +1,8 @@
 <nav class="navbar navbar-expand-lg nd-navbar shadow">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="/">
-      <img class="brand-logo" src="/app/assets/logo.png" alt="NutriDish logo" onerror="this.onerror=null;this.src='/app/assets/logo-fallback.svg'"/>
+      <!-- Use fallback SVG directly to avoid 404 for missing logo.png -->
+      <img class="brand-logo" src="/app/assets/logo-fallback.svg" alt="NutriDish logo" />
       <span class="brand-text">NutriDish</span>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">

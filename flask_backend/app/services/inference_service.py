@@ -93,6 +93,13 @@ def _load_pytorch_vit(model_path: str, device) -> Tuple[Any, Dict[int, str]]:
     class_list = checkpoint['class_list']
     
     model = model.to(device)
+    # Optional dynamic quantization to reduce memory (Linear layers)
+    if os.getenv('DYNAMIC_QUANTIZE', 'true').lower() == 'true':
+        try:
+            model = torch.quantization.quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
+            print("[inference] Applied dynamic quantization to ViT linear layers")
+        except Exception as _qe:
+            print(f"[inference] Quantization skipped: {_qe}")
     model.eval()
     
     # Convert class_list to dict mapping
@@ -127,6 +134,12 @@ def _load_pytorch_resnet(model_path: str, device) -> Tuple[Any, Dict[int, str]]:
     class_list = checkpoint['class_list']
     
     model = model.to(device)
+    if os.getenv('DYNAMIC_QUANTIZE', 'false').lower() == 'true':
+        try:
+            model = torch.quantization.quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
+            print("[inference] Applied dynamic quantization to ResNet linear layer")
+        except Exception as _qe:
+            print(f"[inference] ResNet quantization skipped: {_qe}")
     model.eval()
     
     # Convert class_list to dict mapping
