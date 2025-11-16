@@ -32,4 +32,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl 
 ENV WEB_WORKERS=1 WEB_THREADS=4
 
 # WSGI entrypoint
-CMD gunicorn -w ${WEB_WORKERS} --threads ${WEB_THREADS} -b 0.0.0.0:$PORT flask_backend.wsgi:app
+CMD gunicorn -w ${WEB_WORKERS} --threads ${WEB_THREADS} -b 0.0.0.0:$PORT \
+    --access-logfile - --error-logfile - flask_backend.wsgi:app
