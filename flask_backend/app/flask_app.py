@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # Ensure we always load the project root .env, regardless of current working directory
-from dotenv import load_dotenv as _ld
+from dotenv import load_dotenv as _ld       
 _ld(os.path.join(BASE_DIR, ".env"))
 
 

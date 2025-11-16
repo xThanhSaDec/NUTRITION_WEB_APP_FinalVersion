@@ -1,7 +1,7 @@
 *.keras
 node_modules/
 .env
-data/
+# data/
  
 # Python virtual environments and caches
 .venv/

@@ -8,8 +8,9 @@ from app.services.nutrition_goal_service import evaluate_day  # type: ignore
 from app.services.supabase_service import get_supabase_service  # type: ignore
 
 
-def log_meal_controller(user_id: str, meal_type: str, servings: float, filename: str, content: bytes) -> Dict[str, Any]:
-    infer = get_inference_service()
+def log_meal_controller(user_id: str, meal_type: str, servings: float, filename: str, content: bytes, model_key: str | None = None) -> Dict[str, Any]:
+    # Use selected model if provided to keep consistency with /api/predict
+    infer = get_inference_service(model_key or 'resnet_food101')
     nutri = get_nutrition_service()
     sb = get_supabase_service()
 

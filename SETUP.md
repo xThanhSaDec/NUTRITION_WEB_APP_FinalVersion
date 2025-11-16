@@ -1,108 +1,99 @@
-# 🚀 Quick Setup Guide
-
-## Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-- At least 4GB RAM for ML model
-
-## 📥 Installation Steps
-
-### Step 1: Install Backend Dependencies
-
-```bash
-cd backend
-pip install fastapi==0.104.1 uvicorn[standard]==0.24.0 python-multipart==0.0.6 pydantic==2.5.0 tensorflow==2.13.0 pillow==10.1.0 numpy==1.24.3 pandas==2.1.4
-```
-
-### Step 2: Install Frontend Dependencies
-
-```bash
-cd frontend
-pip install streamlit>=1.28.0 requests>=2.31.0 pillow>=10.1.0 pandas>=2.1.4
-```
-
-## ▶️ Running the Application
-
-### Option 1: Use Batch Files (Windows)
-
-1. Double-click `start_backend.bat` to start the backend server
-2. Double-click `start_frontend.bat` to start the frontend application
-
-### Option 2: Manual Start
-
-**Terminal 1 - Backend:**
-
-```bash
-cd backend
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-**Terminal 2 - Frontend:**
-
-```bash
-cd frontend
-streamlit run streamlit_app.py --server.port 8501
-```
-
-## 🌐 Access Points
-
-- **Frontend Application**: http://localhost:8501
-- **Backend API**: http://127.0.0.1:8000
-- **API Documentation**: http://127.0.0.1:8000/docs
-- **API Health Check**: http://127.0.0.1:8000/health
-
-## 🧪 Testing the Application
-
-### 1. Test Backend API
-
-```bash
-curl http://127.0.0.1:8000/health
-```
-
-### 2. Test Nutrition Endpoint
-
-```bash
-curl http://127.0.0.1:8000/api/nutrition/pho_bo
-```
-
-### 3. Test Frontend
-
-1. Open http://localhost:8501
-2. Navigate to "Predict" page
-3. Upload a food image
-4. Check results
-
-## 🐳 Docker Deployment (Alternative)
-
-```bash
-# Build and run with Docker Compose
 docker-compose up --build
 
-# Access applications:
-# Frontend: http://localhost:8501
-# Backend: http://localhost:8000
+# ⚙️ NutriDish Setup (Flask + PyTorch)
+
+## 1. Yêu cầu
+
+- Python 3.10+ (khuyến nghị)
+- 4GB RAM (tải model lần đầu)
+- Git, pip
+
+## 2. Tạo virtual environment & cài đặt
+
+```bash
+python -m venv .venv
+./.venv/Scripts/activate  # Windows PowerShell
+pip install -r flask_backend/requirements.txt
 ```
 
-## 📝 Usage Instructions
+## 3. Cấu hình môi trường
 
-1. **Start Backend**: Ensure backend server is running on port 8000
-2. **Start Frontend**: Launch Streamlit app on port 8501
-3. **Upload Image**: Go to Predict page and upload food image
-4. **View Results**: Get food identification and nutrition information
-5. **Explore**: Check About Us page for team information
+Tạo file `.env` ở root hoặc `flask_backend/.env`:
 
-## ⚠️ Troubleshooting
+```
+SUPABASE_URL=your-project-url
+SUPABASE_SERVICE_ROLE_KEY=service-role-key
+SUPABASE_BUCKET=food-uploads
+REQUIRE_JWT=true
+```
 
-### Common Issues:
+Sao chép `web/config.example.js` thành `web/config.js` và điền `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 
-- **Port conflicts**: Make sure ports 8000 and 8501 are available
-- **Model loading**: First prediction may take time for model loading
-- **Dependencies**: Install all requirements exactly as specified
-- **Python version**: Use Python 3.8+ for compatibility
+Chạy SQL trong `supabase/schema.sql` (Supabase SQL Editor) để tạo bảng/policy.
 
-### Performance Notes:
+## 4. Chạy ứng dụng
 
-- First prediction: ~10-15 seconds (model loading)
-- Subsequent predictions: ~2-3 seconds
-- Memory usage: ~2-4GB during operation
+```bash
+python -m flask_backend.app.flask_app
+```
+
+Truy cập http://localhost:8000
+
+## 5. Kiểm tra nhanh
+
+```bash
+curl http://localhost:8000/health
+```
+
+## 6. Tải model
+
+Đặt file trọng số (`best_food101_model.pth`, `best_vit_vn30food_model.pth`) vào `ml_models/` ở root. Service tự động tìm.
+
+## 7. Docker (tuỳ chọn)
+
+```bash
+docker compose up --build
+```
+
+## 8. Gỡ bỏ gói thừa (nếu đã cài trước đó)
+
+```bash
+pip uninstall -y tensorflow keras httpx
+```
+
+## 9. Cấu trúc quan trọng
+
+```
+flask_backend/app/
+	flask_app.py          # App factory
+	routes/               # API endpoints
+	services/             # Inference, nutrition, Supabase, templating
+web/templates/pages/    # Trang .hbs
+web/templates/partials/ # Header, footer...
+web/assets/             # Logo, favicon, hình
+ml_models/              # Trọng số PyTorch
+```
+
+## 10. Troubleshooting
+
+| Vấn đề            | Giải pháp                                                          |
+| ----------------- | ------------------------------------------------------------------ |
+| 404 model         | Kiểm tra tên file `.pth` chính xác đặt trong `ml_models/`          |
+| Supabase Auth lỗi | Kiểm tra URL, key; đồng bộ thời gian hệ thống                      |
+| Ảnh không hiện    | Đảm bảo đường dẫn `/app/assets/...` (Flask phục vụ thư mục `web/`) |
+| QUIC timeout      | Tạm tắt QUIC trong trình duyệt hoặc thử Firefox                    |
+
+## 11. Hiệu năng
+
+- Lần đầu dự đoán: model load vào RAM.
+- Dự đoán sau: sử dụng cache `_model_cache`.
+- Có thể preload bằng cách gọi `get_inference_service()` khi khởi động.
+
+## 12. Nâng cấp sau
+
+- Multi-food detection YOLO/DETR.
+- Lưu lịch sử target & khuyến nghị.
+- Mobile offline capture.
+- Recipe macro parsing.
+
+Hoàn tất cài đặt! 🎉
