@@ -28,8 +28,8 @@ def model_status():
 def predict_health():
     """Quick check to ensure default model can be loaded"""
     try:
-        # Check default model (changed to resnet_food101)
-        infer = get_inference_service('resnet_food101')
+        # Check default model (now vn30 prioritized)
+        infer = get_inference_service('vn30')
         ok = infer is not None and getattr(infer, 'model', None) is not None
         
         return jsonify({

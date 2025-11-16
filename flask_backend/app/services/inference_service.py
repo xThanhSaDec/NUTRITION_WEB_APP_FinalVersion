@@ -29,7 +29,8 @@ CANDIDATE_MODEL_DIRS = [
     os.path.abspath(os.path.join(THIS_DIR, "..", "..", "..", "ml_models")),
 ]
 
-# Model configurations - Only PyTorch models
+_ENABLE_VN30 = True  # Force-enable VN30 per user request
+# Prioritize VN30 first; include both models
 MODEL_CONFIGS = {
     'vn30': {
         'name': 'Vietnamese Cuisine (VN30)',
@@ -67,7 +68,11 @@ def _load_pytorch_vit(model_path: str, device) -> Tuple[Any, Dict[int, str]]:
     if not _HAS_TORCH:
         raise RuntimeError("PyTorch not installed")
     
-    checkpoint = torch.load(model_path, map_location=device)
+    # Use weights_only when available to avoid loading optimizer/state
+    try:
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+    except TypeError:
+        checkpoint = torch.load(model_path, map_location=device)
     num_classes = checkpoint['num_classes']
     
     # Initialize ViT architecture
@@ -105,7 +110,10 @@ def _load_pytorch_resnet(model_path: str, device) -> Tuple[Any, Dict[int, str]]:
     model = torchvision.models.resnet50(weights=None)
     
     # Load checkpoint
-    checkpoint = torch.load(model_path, map_location=device)
+    try:
+        checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+    except TypeError:
+        checkpoint = torch.load(model_path, map_location=device)
     num_classes = checkpoint['num_classes']
     
     # Modify classifier head
@@ -209,7 +217,7 @@ def _preprocess_pytorch(img_bytes: bytes, size: int, architecture: str):
 
 
 class InferenceService:
-    def __init__(self, model_key: str = 'resnet_food101') -> None:
+    def __init__(self, model_key: str = 'vn30') -> None:
         self.model_key = model_key
         self.state = _ensure_model_loaded(model_key)
         self.model = self.state.model
