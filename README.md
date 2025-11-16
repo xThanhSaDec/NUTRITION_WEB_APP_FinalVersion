@@ -10,7 +10,7 @@ NutriDish nhận diện món ăn từ ảnh (PyTorch ViT / ResNet) và cung cấ
 | Auth/DB/Storage | Supabase                     | Auth JWT, bảng `users`/`food_logs`, bucket ảnh   |
 | Templates       | Handlebars (pybars3)         | Layout + partials + pages `.hbs`                 |
 | ML Inference    | PyTorch (torch, torchvision) | Load model ViT / ResNet (file `.pth`)            |
-| Nutrition Data  | CSV (Pandas)                 | Fallback dinh dưỡng nếu không dùng bảng Supabase |
+| Nutrition Data  | CSV (built-in csv)           | Fallback dinh dưỡng nếu không dùng bảng Supabase |
 
 ## 📁 Cấu trúc (rút gọn)
 
@@ -91,7 +91,7 @@ Kết quả: tên món ăn (top-1), danh sách top-5 và độ tự tin.
 
 ## 🧾 Dependencies (đã tối giản)
 
-`flask_backend/requirements.txt`:
+`flask_backend/requirements.txt` (tối giản):
 
 ```
 Flask
@@ -99,14 +99,11 @@ flask-cors
 python-dotenv
 supabase
 pybars3
-pandas
 pillow
-torch (CPU)
-torchvision (CPU)
-torchaudio (CPU)
+# PyTorch cài riêng: torch torchvision torchaudio (CPU wheels)
 ```
 
-ĐÃ BỎ: tensorflow, keras, httpx, numpy (numpy chỉ dùng gián tiếp qua torch/pandas).
+ĐÃ BỎ: tensorflow, keras, httpx, numpy, pandas (CSV parse bằng csv module, giảm RAM).
 
 ## 🧪 Kiểm tra nhanh
 
