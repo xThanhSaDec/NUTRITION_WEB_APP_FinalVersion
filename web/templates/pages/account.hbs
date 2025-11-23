@@ -46,13 +46,29 @@
   (async function(){
     const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
     if(!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY){ return; }
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Reuse same global client & storageKey used on login page to pick up existing session
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const sb = window.SUPABASE;
 
     async function getSession(){ try { const { data } = await sb.auth.getSession(); return data?.session || null; } catch { return null; } }
     async function getUser(){ try { const { data } = await sb.auth.getUser(); return data?.user || null; } catch { return null; } }
 
-    // Populate fields
-    const u = await getUser();
+    // Populate fields (avoid premature redirect: check session + retry)
+    let u = await getUser();
+    if(!u){
+      const sess = await getSession();
+      if(sess?.user) u = sess.user;
+    }
+    if(!u){
+      for(let i=0;i<5 && !u;i++){
+        await new Promise(r=>setTimeout(r,200));
+        u = await getUser();
+      }
+    }
     if(!u){ window.location.href = '/login'; return; }
     let display = (u.user_metadata && (u.user_metadata.display_name || u.user_metadata.full_name)) || '';
     let url_image = (u.user_metadata && (u.user_metadata.avatar_url || u.user_metadata.picture)) || '';
