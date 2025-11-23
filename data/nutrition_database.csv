@@ -1,0 +1,131 @@
+dish_name,calories,protein,fat,carbs,serving,dataset_source
+apple_pie,237,2.4,11.0,34.0,1 slice (100g),Food-101
+baby_back_ribs,292,26.0,20.0,0.0,100g,Food-101
+baklava,307,4.0,13.0,46.0,1 piece (100g),Food-101
+banh_beo,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_bot_loc,250,22.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_can,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_canh,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_chung,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_cuon,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_duc,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_gio,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_khot,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_mi,400,18.0,12.0,55.0,1 serving (200g),30VNFoods
+banh_pia,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_tet,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_trang_nuong,250,12.0,6.0,30.0,1 serving (200g),30VNFoods
+banh_xeo,320,12.0,18.0,30.0,1 serving (200g),30VNFoods
+beef_carpaccio,139,24.0,4.0,1.0,100g,Food-101
+beef_tartare,155,21.0,7.0,1.0,100g,Food-101
+beet_salad,58,2.0,0.2,13.0,1 cup (100g),Food-101
+beignets,304,4.0,18.0,32.0,100g,Food-101
+bibimbap,145,8.0,3.0,22.0,1 bowl (250g),Food-101
+bread_pudding,180,4.0,5.0,30.0,100g,Food-101
+breakfast_burrito,205,11.0,8.0,24.0,1 burrito (150g),Food-101
+bruschetta,85,3.0,2.0,14.0,1 slice (50g),Food-101
+bun_bo_hue,350,22.0,8.0,45.0,1 serving (200g),30VNFoods
+bun_dau_mam_tom,350,12.0,8.0,45.0,1 serving (200g),30VNFoods
+bun_mam,350,12.0,8.0,45.0,1 serving (200g),30VNFoods
+bun_rieu,350,12.0,8.0,45.0,1 serving (200g),30VNFoods
+bun_thit_nuong,350,12.0,8.0,45.0,1 serving (200g),30VNFoods
+ca_kho_to,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+caesar_salad,158,6.0,13.0,6.0,1 serving (100g),Food-101
+canh_chua,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+cannoli,298,6.0,19.0,27.0,1 piece (100g),Food-101
+cao_lau,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+caprese_salad,128,8.0,9.0,4.0,1 serving (100g),Food-101
+carrot_cake,315,4.0,15.0,43.0,1 slice (100g),Food-101
+ceviche,139,25.0,2.0,5.0,100g,Food-101
+chao_long,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+cheese_plate,113,7.0,9.0,1.0,100g,Food-101
+cheesecake,321,5.5,23.0,25.0,1 slice (100g),Food-101
+chicken_curry,165,18.0,8.0,6.0,1 cup (200g),Food-101
+chicken_quesadilla,529,27.0,31.0,35.0,1 quesadilla (200g),Food-101
+chicken_wings,203,30.0,8.0,0.0,100g,Food-101
+chocolate_cake,371,5.0,16.0,56.0,1 slice (100g),Food-101
+chocolate_mousse,168,3.0,11.0,16.0,100g,Food-101
+churros,312,4.0,18.0,35.0,100g,Food-101
+clam_chowder,122,7.0,7.0,9.0,1 cup (250ml),Food-101
+club_sandwich,590,31.0,31.0,44.0,1 sandwich (300g),Food-101
+com_tam,550,22.0,18.0,65.0,1 serving (200g),30VNFoods
+crab_cakes,160,11.0,10.0,5.0,1 cake (80g),Food-101
+creme_brulee,292,4.0,23.0,17.0,100g,Food-101
+croque_madame,324,18.0,23.0,13.0,1 serving (200g),Food-101
+cup_cakes,305,3.0,12.0,48.0,1 cupcake (100g),Food-101
+deviled_eggs,124,6.0,10.0,1.0,2 halves (50g),Food-101
+donuts,452,5.0,25.0,51.0,1 donut (100g),Food-101
+dumplings,40,2.0,2.0,4.0,1 dumpling (25g),Food-101
+edamame,121,11.0,5.0,8.0,1 cup (100g),Food-101
+eggs_benedict,512,20.0,43.0,11.0,1 serving (200g),Food-101
+escargots,173,24.0,2.0,13.0,6 pieces (100g),Food-101
+falafel,333,13.0,18.0,32.0,100g,Food-101
+filet_mignon,227,22.0,15.0,0.0,100g,Food-101
+fish_and_chips,232,15.0,11.0,18.0,100g,Food-101
+foie_gras,462,11.7,43.8,4.7,100g,Food-101
+french_fries,365,4.0,17.0,48.0,100g,Food-101
+french_onion_soup,57,3.8,1.7,8.0,1 cup (250ml),Food-101
+french_toast,166,5.0,7.0,20.0,1 slice (65g),Food-101
+fried_calamari,175,15.0,7.0,15.0,100g,Food-101
+fried_rice,163,4.0,5.0,25.0,1 cup (150g),Food-101
+frozen_yogurt,127,3.0,4.0,22.0,100g,Food-101
+garlic_bread,150,4.0,6.0,21.0,1 slice (50g),Food-101
+gnocchi,131,4.0,1.0,27.0,100g,Food-101
+goi_cuon,80,6.0,6.0,25.0,1 serving (200g),30VNFoods
+greek_salad,107,3.0,8.0,6.0,1 serving (100g),Food-101
+grilled_cheese_sandwich,291,12.0,18.0,21.0,1 sandwich (100g),Food-101
+grilled_salmon,231,25.0,14.0,0.0,100g,Food-101
+guacamole,160,2.0,15.0,9.0,100g,Food-101
+gyoza,40,2.0,2.0,4.0,1 dumpling (25g),Food-101
+hamburger,295,17.0,14.0,25.0,1 burger (150g),Food-101
+hot_and_sour_soup,91,6.0,4.0,8.0,1 cup (250ml),Food-101
+hot_dog,151,5.0,13.0,2.0,1 hot dog (45g),Food-101
+hu_tieu,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+huevos_rancheros,233,13.0,16.0,11.0,1 serving (200g),Food-101
+hummus,166,8.0,10.0,14.0,100g,Food-101
+ice_cream,207,4.0,11.0,24.0,100g,Food-101
+lasagna,135,8.0,6.0,13.0,100g,Food-101
+lobster_bisque,104,4.0,6.0,9.0,1 cup (250ml),Food-101
+lobster_roll_sandwich,436,18.0,25.0,37.0,1 roll (200g),Food-101
+macaroni_and_cheese,164,7.0,8.0,16.0,100g,Food-101
+macarons,390,9.0,16.0,55.0,100g,Food-101
+mi_quang,250,12.0,6.0,25.0,1 serving (200g),30VNFoods
+miso_soup,40,3.0,1.0,5.0,1 cup (250ml),Food-101
+mussels,172,24.0,4.0,7.0,100g,Food-101
+nachos,346,9.0,19.0,36.0,100g,Food-101
+nem_chua,160,12.0,6.0,25.0,1 serving (200g),30VNFoods
+omelette,154,11.0,12.0,1.0,100g,Food-101
+onion_rings,411,6.0,21.0,51.0,100g,Food-101
+oysters,68,7.0,3.0,4.0,6 oysters (100g),Food-101
+pad_thai,181,9.0,8.0,21.0,1 cup (150g),Food-101
+paella,172,11.0,5.0,22.0,1 cup (200g),Food-101
+pancakes,227,6.0,9.0,32.0,100g,Food-101
+panna_cotta,185,4.0,12.0,16.0,100g,Food-101
+peking_duck,337,19.0,28.0,0.0,100g,Food-101
+pho,150,10.0,3.0,20.0,1 bowl (400ml),Food-101
+pizza,266,11.0,10.0,33.0,1 slice (100g),Food-101
+pork_chop,231,23.0,14.0,0.0,100g,Food-101
+poutine,740,13.0,36.0,93.0,1 serving (300g),Food-101
+prime_rib,291,25.0,20.0,0.0,100g,Food-101
+pulled_pork_sandwich,365,22.0,16.0,32.0,1 sandwich (200g),Food-101
+ramen,436,19.0,20.0,44.0,1 bowl (400g),Food-101
+ravioli,175,7.0,8.0,20.0,100g,Food-101
+red_velvet_cake,478,5.0,19.0,77.0,1 slice (150g),Food-101
+risotto,142,3.0,4.0,22.0,100g,Food-101
+samosa,308,6.0,17.0,33.0,1 piece (100g),Food-101
+sashimi,127,20.0,4.0,0.0,100g,Food-101
+scallops,137,24.0,1.0,7.0,100g,Food-101
+seaweed_salad,45,2.0,0.6,9.0,100g,Food-101
+shrimp_and_grits,258,18.0,15.0,13.0,1 cup (200g),Food-101
+spaghetti_bolognese,151,8.0,5.0,19.0,100g,Food-101
+spaghetti_carbonara,194,8.0,10.0,19.0,100g,Food-101
+spring_rolls,140,3.0,7.0,18.0,1 roll (50g),Food-101
+steak,271,26.0,18.0,0.0,100g,Food-101
+strawberry_shortcake,344,4.0,17.0,44.0,1 slice (150g),Food-101
+sushi,143,6.0,1.0,28.0,1 piece (30g),Food-101
+tacos,226,9.0,13.0,18.0,1 taco (100g),Food-101
+takoyaki,40,1.5,2.0,4.0,1 ball (25g),Food-101
+tiramisu,240,4.0,13.0,28.0,100g,Food-101
+tuna_tartare,144,23.0,5.0,0.0,100g,Food-101
+waffles,291,6.0,15.0,35.0,1 waffle (100g),Food-101
+xoi_xeo,250,12.0,6.0,25.0,1 serving (200g),30VNFoods

@@ -1,0 +1,152 @@
+<nav class="navbar navbar-expand-lg nd-navbar shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="/">
+      <img class="brand-logo" src="/app/assets/logo.png" alt="NutriDish logo" onerror="this.onerror=null;this.src='/app/assets/logo-fallback.svg'"/>
+      <span class="brand-text">NutriDish</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/upload">Upload</a></li>
+        <li class="nav-item"><a class="nav-link" href="/today">Today</a></li>
+        <li class="nav-item"><a class="nav-link" href="/history">Dish Log</a></li>
+        <li class="nav-item"><a class="nav-link" href="/statistic">Statistics</a></li>
+      </ul> 
+      <div class="d-flex align-items-center gap-2">
+        <!-- Theme toggle: light (sun) <-> dark (moon) -->
+        <button id="themeToggle" class="btn btn-sm btn-secondary" type="button" aria-label="Toggle theme">
+          <i id="themeIcon" class="bi bi-sun-fill"></i>
+        </button>
+        <!-- Unauthenticated state -->
+        <a id="loginLink" href="/login" class="btn btn-sm btn-outline-primary">Sign In / Sign Up</a>
+
+        <!-- Authenticated compact UI: greeting + avatar -->
+        <div id="authCompact" class="d-none d-flex align-items-center gap-2" style="position:relative">
+          <div id="greeting" class="me-1">Hi, <span id="greetName"></span></div>
+          <button id="avatarBtn" class="btn p-0 border-0" style="width:40px;height:40px;border-radius:50%;overflow:hidden;">
+            <img id="avatarImg" src="/app/templates/partials/default-avatar.svg" alt="avatar" style="width:100%;height:100%;object-fit:cover;" />
+          </button>
+          <div id="authCard" class="card d-none" style="position:absolute;right:0;top:48px;min-width:220px;padding:12px;border-radius:10px;z-index:2000;">
+            <div class="d-flex align-items-center gap-3">
+              <img id="cardAvatar" src="/app/templates/partials/default-avatar.svg" alt="avatar" style="width:56px;height:56px;border-radius:50%;object-fit:cover;" />
+              <div>
+                <div id="cardName" style="font-weight:600"></div>
+                <div id="cardEmail" style="font-size:0.9em;color:#666"></div>
+              </div>
+            </div>
+            <hr />
+            <div class="d-grid gap-2">
+              <a id="profileLink" class="btn btn-sm btn-outline-primary" href="/profile">Profile</a>
+              <a id="accountSettings" class="btn btn-sm btn-outline-secondary" href="/account">Account Setting</a>
+              <button id="signOutBtn" class="btn btn-sm btn-outline-danger" type="button">Sign out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  (function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG || {};
+
+    // THEME: initialize, toggle, and persist
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const applyTheme = (theme)=>{
+      const t = theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('theme', t); } catch(_e){}
+      if(themeIcon){ themeIcon.className = (t === 'dark') ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill'; }
+    };
+    const savedTheme = (()=>{ try { return localStorage.getItem('theme'); } catch(_e){ return null; } })();
+    applyTheme(savedTheme || 'light');
+    if(themeToggle){
+      themeToggle.addEventListener('click', ()=>{
+        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        applyTheme(cur === 'light' ? 'dark' : 'light');
+      });
+    }
+
+    // AUTH UI only if Supabase available
+    let sb = null;
+    if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+      // Reuse a single global client to avoid multiple GoTrueClient warnings
+      window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        { auth: { storageKey: 'nutri-auth' } }
+      );
+      sb = window.SUPABASE;
+    }
+
+    async function updateAuthUI(){
+      if(!sb) return;
+      try{
+        const sessionRes = await sb.auth.getSession();
+        const hasSession = !!sessionRes?.data?.session;
+        const loginLink = document.getElementById('loginLink');
+        const authCompact = document.getElementById('authCompact');
+        if (loginLink) loginLink.classList.toggle('d-none', hasSession);
+        if (authCompact) authCompact.classList.toggle('d-none', !hasSession);
+
+        if(hasSession){
+          // fetch user and app-level users row for display_name and url_image
+          const userRes = await sb.auth.getUser();
+          const user = userRes?.data?.user;
+          let display = null, avatar = null, email = null;
+          if(user){
+            email = user.email || '';
+            // try to read from app 'users' table
+            try{
+              const { data, error } = await sb.from('users').select('display_name,url_image,email').eq('user_id', user.id).limit(1).single();
+              if(data){
+                display = data.display_name || null;
+                avatar = data.url_image || null;
+                email = data.email || email;
+              }
+            }catch(e){ /* ignore */ }
+            // fallback to user_metadata from auth
+            if(!display) display = (user.user_metadata && (user.user_metadata.display_name || user.user_metadata.full_name)) || (email ? email.split('@')[0] : 'User');
+          }
+          // populate UI
+          const greetName = document.getElementById('greetName');
+          const avatarImg = document.getElementById('avatarImg');
+          const cardAvatar = document.getElementById('cardAvatar');
+          const cardName = document.getElementById('cardName');
+          const cardEmail = document.getElementById('cardEmail');
+          if(greetName) greetName.textContent = display || '';
+          if(avatarImg) avatarImg.src = avatar || '/app/templates/partials/default-avatar.svg';
+          if(cardAvatar) cardAvatar.src = avatar || '/app/templates/partials/default-avatar.svg';
+          if(cardName) cardName.textContent = display || '';
+          if(cardEmail) cardEmail.textContent = email || '';
+        }
+      }catch(err){ console.warn('auth ui error', err); }
+    }
+  if(sb) updateAuthUI();
+
+    // Sign out and dropdown behavior
+    const signOutBtn = document.getElementById('signOutBtn');
+    if(signOutBtn && sb){
+      signOutBtn.addEventListener('click', async () => { await sb.auth.signOut(); updateAuthUI(); window.location.href='/login'; });
+    }
+    const avatarBtn = document.getElementById('avatarBtn');
+    const authCard = document.getElementById('authCard');
+    if(avatarBtn && authCard){
+      avatarBtn.addEventListener('click', ()=>{ authCard.classList.toggle('d-none'); });
+      // click outside to close
+      document.addEventListener('click', (ev)=>{
+        const target = ev.target;
+        if(!authCard.contains(target) && !avatarBtn.contains(target)){
+          authCard.classList.add('d-none');
+        }
+      });
+    }
+    // Deprecated changeThemeIcon removed in favor of applyTheme above
+  })();
+</script>
+

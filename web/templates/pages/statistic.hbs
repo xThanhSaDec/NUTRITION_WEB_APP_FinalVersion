@@ -1,0 +1,238 @@
+<div class="card">
+  <h2>Statistics</h2>
+  <div class="row g-3 align-items-end">
+    <div class="col-6 col-md-3">
+      <label class="form-label">Start
+        <input type="date" id="start" class="form-control" />
+      </label>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label">End
+        <input type="date" id="end" class="form-control" />
+      </label>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label">Bucket
+        <select id="bucket" class="form-select">
+          <option value="day" selected>Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+      </label>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label">Goal weight (kg)
+        <input type="number" id="goalWeight" class="form-control" min="1" step="0.1" placeholder="" />
+      </label>
+    </div>
+    <div class="col-12 col-md-2 d-flex gap-2">
+      <button class="btn flex-grow-1" id="load">Load</button>
+      <button class="btn btn-outline-secondary" id="quickToday" type="button" title="Set range to last 7 days">Last 7d</button>
+    </div>
+  </div>
+  <div class="mt-3 small text-muted" id="rangeInfo"></div>
+</div>
+
+<div class="card">
+  <canvas id="chart" height="220"></canvas>
+  <div id="streakAdvice" class="streak-advice mt-3"></div>
+  <div id="targetsPanel" class="mt-3"></div>
+  <div id="recommendPanel" class="mt-3"></div>
+</div>
+
+<script>
+  (function(){
+  const { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } = window.APP_CONFIG || {};
+  window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    { auth: { storageKey: 'nutri-auth' } }
+  );
+  const supabase = window.SUPABASE;
+  let chart;
+  let cachedProfile = null;
+    async function uid(){ const { data } = await supabase.auth.getUser(); return data?.user?.id; }
+    async function fetchProfile(){
+      try{
+        const sessionObj = await supabase.auth.getSession();
+        const token = sessionObj.data.session?.access_token;
+        const userRes = await supabase.auth.getUser();
+        const uid = userRes?.data?.user?.id;
+        const hdrs = {};
+        if(token){ hdrs['Authorization'] = `Bearer ${token}`; } else if(uid){ hdrs['X-User-Id'] = uid; }
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers: hdrs });
+        if(!res.ok) return null;
+        const j = await res.json();
+        cachedProfile = j.profile || null;
+        return cachedProfile;
+      }catch(_){ return null; }
+    }
+    async function ensureProfileOrPrompt(){
+      try{
+        const sessionObj = await supabase.auth.getSession();
+        const token = sessionObj.data.session?.access_token;
+        const userRes = await supabase.auth.getUser();
+        const uid = userRes?.data?.user?.id;
+        const hdrs = {};
+        if(token){ hdrs['Authorization'] = `Bearer ${token}`; } else if(uid){ hdrs['X-User-Id'] = uid; }
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers: hdrs });
+        if(res.status === 404){
+            if(window.Swal){
+              const ret = await Swal.fire({ title: 'Missing profile', text:'Please complete your profile before viewing statistics.', icon:'warning', confirmButtonText:'Go to Profile' });
+            if(ret.isConfirmed){ window.location.href = '/profile'; }
+          } else {
+              if(confirm('Please complete your profile. Go to Profile?')) window.location.href = '/profile';
+          }
+          return false;
+        }
+        return true;
+      }catch(e){ return true; }
+    }
+    async function loadStats(){
+      const user_id = await uid();
+      if(!user_id){
+        if(window.Swal){ await Swal.fire({ icon:'info', title:'Please sign in', confirmButtonText:'Go to Login' }).then(r=>{ if(r.isConfirmed) window.location.href='/login'; }); }
+        else { alert('Please sign in'); }
+        return;
+      }
+      const ok = await ensureProfileOrPrompt(); if(!ok) return;
+  const startEl = document.getElementById('start');
+      const endEl = document.getElementById('end');
+      const bucketEl = document.getElementById('bucket');
+      const goalEl = document.getElementById('goalWeight');
+      const start = startEl && 'value' in startEl ? startEl.value : '';
+      const end = endEl && 'value' in endEl ? endEl.value : '';
+      const bucket = bucketEl && 'value' in bucketEl ? bucketEl.value : 'day';
+      const goalWeight = goalEl && 'value' in goalEl && goalEl.value ? goalEl.value : '';
+  const sessionObj = await supabase.auth.getSession();
+  const token = sessionObj.data.session?.access_token;
+      // Persist goal weight to profile if user entered and it's different
+      const prof = cachedProfile || await fetchProfile();
+      if(prof && goalWeight && String(prof.goal_weight||'') !== String(goalWeight)){
+        try{
+          const payload = {
+            age: prof.age,
+            weight_kg: prof.weight_kg,
+            height_cm: prof.height_cm,
+            gender: prof.gender,
+            activity: prof.activity || 'moderate',
+            goal_weight: parseFloat(goalWeight)
+          };
+          const userRes = await supabase.auth.getUser();
+          const uid = userRes?.data?.user?.id;
+          const hdrsProfileSave = { 'Content-Type':'application/json' };
+          if(token){ hdrsProfileSave['Authorization'] = `Bearer ${token}`; } else if(uid){ hdrsProfileSave['X-User-Id'] = uid; }
+          await fetch(`${BACKEND_URL}/api/user/profile`, { method:'POST', headers: hdrsProfileSave, body: JSON.stringify(payload) });
+          // refresh cached
+          await fetchProfile();
+        }catch(_){ /* non-blocking */ }
+      }
+      const url = new URL(`${BACKEND_URL}/api/stats/series`);
+      if(start) url.searchParams.set('start', start);
+      if(end) url.searchParams.set('end', end);
+      url.searchParams.set('bucket', bucket);
+      if(goalWeight) url.searchParams.set('goal_weight', goalWeight);
+  const userRes2 = await supabase.auth.getUser();
+  const uid2 = userRes2?.data?.user?.id;
+  const hdrsStats = {};
+  if(token){ hdrsStats['Authorization'] = `Bearer ${token}`; } else if(uid2){ hdrsStats['X-User-Id'] = uid2; }
+  const r = await fetch(url.toString(), { headers: hdrsStats });
+      const stats = await r.json();
+      const labels = stats.labels || [];
+      const series = stats.series || [];
+      const applied = stats.applied_targets || {};
+      const advice = stats.advice || { missing:{}, excess:{} };
+      const recs = stats.recommendations || {};
+      const rangeInfo = document.getElementById('rangeInfo');
+      if(rangeInfo) rangeInfo.textContent = `Range: ${stats.range?.start} → ${stats.range?.end} (bucket: ${stats.bucket})`;
+
+      // Build datasets from series
+      const macroKeys = ['calories','protein','fat','carbs','fiber'];
+      const colors = { calories:'#e67e22', protein:'#16a085', fat:'#c0392b', carbs:'#2980b9', fiber:'#27ae60' };
+      const datasets = macroKeys.map(k=>({ label: k.charAt(0).toUpperCase()+k.slice(1), data: series.map(row=>row[k]||0), borderColor: colors[k], tension:0.2 }));
+      const ctx = document.getElementById('chart');
+      if(chart) chart.destroy();
+      if(ctx && window.Chart){
+        chart = new Chart(ctx, { type:'line', data:{ labels, datasets }, options:{ responsive:true, interaction:{ mode:'index', intersect:false }, plugins:{ tooltip:{ callbacks:{
+          label: (ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
+        } } } } });
+      }
+
+      // Streak for current user
+      try{
+  const hdrsStreak = {};
+  if(token){ hdrsStreak['Authorization'] = `Bearer ${token}`; } else if(uid2){ hdrsStreak['X-User-Id'] = uid2; }
+  const stRes = await fetch(`${BACKEND_URL}/api/streak`, { headers: hdrsStreak });
+        const stJson = await stRes.json();
+        const streakDays = stJson?.streak || 0;
+        const streakAdvice = document.getElementById('streakAdvice');
+        if(streakAdvice){
+          const missingList = Object.entries(advice.missing||{}).map(([k,v])=>`<span class='badge bg-danger-subtle text-danger'>Low ${k}: need ${v}</span>`).join(' ');
+          const excessList = Object.entries(advice.excess||{}).map(([k,v])=>`<span class='badge bg-warning-subtle text-warning'>High ${k}: over ${v}</span>`).join(' ');
+          streakAdvice.innerHTML = `<div class='mb-2'>Streak: <strong>${streakDays}</strong> days</div>` +
+            (missingList? `<div class='mb-2'>${missingList}</div>`: '') +
+            (excessList? `<div class='mb-2'>${excessList}</div>`: '') +
+            (!missingList && !excessList ? `<div class='text-success'>Great job! You're on track.</div>` : '');
+        }
+      }catch(_){ }
+
+      // Applied targets panel
+      const targetsPanel = document.getElementById('targetsPanel');
+      if(targetsPanel){
+        targetsPanel.innerHTML = `<h5>Applied Daily Targets</h5>
+          <ul class='list-unstyled mb-0'>
+            <li>Calories: <strong>${applied.calories||0}</strong></li>
+            <li>Protein: <strong>${applied.protein||0} g</strong></li>
+            <li>Fat: <strong>${applied.fat||0} g</strong></li>
+            <li>Carbs: <strong>${applied.carbs||0} g</strong></li>
+            <li>Fiber: <strong>${applied.fiber||0} g</strong></li>
+          </ul>`;
+      }
+
+      // Recommendations panel
+  const recommendPanel = document.getElementById('recommendPanel');
+      if(recommendPanel){
+        const recMacroKeys = Object.keys(recs||{});
+        if(!recMacroKeys.length){
+          recommendPanel.innerHTML = '';
+        } else {
+          let html = '<h5>Recommendations</h5>';
+          recMacroKeys.forEach(m=>{
+            const list = recs[m] || [];
+            if(!list.length) return;
+            html += `<div class='mb-2'><div class='fw-semibold text-capitalize'>${m}</div><div class='d-flex flex-wrap gap-2'>`;
+            list.forEach(item=>{
+              html += `<div class='border rounded p-2 small' style='min-width:140px'>
+                <div class='fw-semibold'>${item.dish_name}</div>
+                <div class='text-muted'>Serv: ${item.serving||'-'}</div>
+              </div>`;
+            });
+            html += '</div></div>';
+          });
+          recommendPanel.innerHTML = html;
+        }
+      }
+    }
+    document.getElementById('load')?.addEventListener('click', loadStats);
+    document.getElementById('quickToday')?.addEventListener('click', ()=>{
+      const end = new Date();
+      const start = new Date(Date.now() - 6*24*3600*1000);
+      const toISO = d=> d.toISOString().slice(0,10);
+      const sEl = document.getElementById('start');
+      const eEl = document.getElementById('end');
+      if(sEl) sEl.value = toISO(start);
+      if(eEl) eEl.value = toISO(end);
+      loadStats();
+    });
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // Prefill goal weight from profile if present
+      const prof = await fetchProfile();
+      if(prof && prof.goal_weight){
+        const gwEl = document.getElementById('goalWeight');
+        if(gwEl && !gwEl.value) gwEl.value = prof.goal_weight;
+      }
+      loadStats();
+    });
+  })();
+</script>

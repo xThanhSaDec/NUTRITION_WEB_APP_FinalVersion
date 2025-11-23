@@ -1,0 +1,13 @@
+{
+  "name": "nutrition-web-application",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Dev helper for running Flask backend with nodemon auto-reload",
+  "scripts": {
+    "dev": "nodemon",
+    "dev:verbose": "nodemon --verbose"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

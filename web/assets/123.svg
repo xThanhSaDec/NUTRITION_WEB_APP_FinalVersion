@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NutriDish logo">
+  <defs>
+    <linearGradient id="bowlGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#B7E4C7"/>
+      <stop offset="100%" stop-color="#95D5B2"/>
+    </linearGradient>
+  </defs>
+  <!-- Leaves -->
+  <path d="M46 10c-4 0-8 3-9 6 4 1 8-2 9-6z" fill="#74C69D"/>
+  <path d="M38 12c-3 1-5 4-5 7 3 0 6-2 7-5" fill="#3DAC78"/>
+  <!-- Bowl -->
+  <path d="M8 28c0 10 10 20 24 20s24-10 24-20H8z" fill="url(#bowlGrad)" stroke="#74C69D" stroke-width="2"/>
+  <!-- Rim highlight -->
+  <path d="M10 28c0-2 10-4 22-4s22 2 22 4" fill="none" stroke="#D8F3DC" stroke-width="2" stroke-linecap="round"/>
+</svg>

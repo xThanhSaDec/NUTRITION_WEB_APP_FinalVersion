@@ -1,0 +1,22 @@
+{
+  "watch": [
+    "flask_backend/app/**/*.py",
+    "web/**/*.hbs",
+    "web/**/*.js",
+    "web/**/*.css",
+    ".env"
+  ],
+  "ext": "py,hbs,js,css",
+  "ignore": [
+    "flask_backend/.venv/**",
+    "**/__pycache__/**"
+  ],
+  "exec": ".\\flask_backend\\.venv\\Scripts\\python.exe -m flask_backend.app.flask_app",
+  "cwd": ".",
+  "env": {
+    "PYTHONUNBUFFERED": "1",
+    "FLASK_ENV": "development"
+  },
+  "delay": "300ms",
+  "restartable": "rs"
+}

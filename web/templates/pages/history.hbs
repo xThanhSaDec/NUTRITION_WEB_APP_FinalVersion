@@ -1,0 +1,178 @@
+{{!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"> --}}
+<div class="card">
+  <h2>Dish Log</h2>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <label>Start <input type="date" id="start"></label>
+    <label>End <input type="date" id="end"></label>
+    <label>Sort by 
+      <select id="sort">
+        <option value="date_asc">Date asc</option>
+        <option value="date_desc" selected>Date desc</option>
+        <option value="cal_desc">Calories desc</option>
+        <option value="prot_desc">Protein desc</option>
+      </select>
+    </label>
+    <button class="btn" id="load">Load</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="h5">Your logs</h3>
+  <div id="logs" class="list-group"></div>
+  <!-- Editable template for one log item -->
+  <template id="logItemTemplate">
+    <div class="list-group-item">
+      <div class="row w-100 align-items-center g-2">
+        <div class="col-auto">
+          <img class="log-img" alt="Meal image" style="width:64px;height:64px;object-fit:cover;border-radius:8px;display:none"/>
+        </div>
+        <div class="col">
+          <div><strong class="log-title">Dish</strong> • <span class="text-muted log-meal">meal</span></div>
+          <div class="small text-muted log-time">time</div>
+        </div>
+        <div class="col-auto text-end">
+          <div class="small log-macros"><i class="fa-solid fa-fire"></i>: <strong class="log-cal">0</strong> <i class="fa-solid fa-drumstick-bite"></i>: <span class="log-prot">0</span> <i class="fa-solid fa-oil-can"></i>: <span class="log-fat">0</span> <i class="fa-solid fa-bowl-rice"></i>: <span class="log-carbs">0</span> <i class="fa-solid fa-carrot"></i>: <span class="log-fiber">0</span></div>
+        </div>
+        <div class="col-auto">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-delete" title="Delete">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  (function(){
+    const { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } = window.APP_CONFIG || {};
+    window.SUPABASE = window.SUPABASE || window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      { auth: { storageKey: 'nutri-auth' } }
+    );
+    const supabase = window.SUPABASE;
+    async function uid(){ const { data } = await supabase.auth.getUser(); return data?.user?.id; }
+    async function ensureProfileOrPrompt(){
+      try{
+        const token = (await supabase.auth.getSession()).data.session?.access_token;
+        const res = await fetch(`${BACKEND_URL}/api/user/profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if(res.status === 404){
+            if(window.Swal){
+              const ret = await Swal.fire({ title: 'Missing profile', text:'Please complete your profile before viewing your history.', icon:'warning', confirmButtonText:'Go to Profile' });
+            if(ret.isConfirmed){ window.location.href = '/profile'; }
+          } else {
+              if(confirm('Please complete your profile. Go to Profile?')) window.location.href = '/profile';
+          }
+          return false;
+        }
+        return true;
+      }catch(e){ return true; }
+    }
+    async function loadHistory(){
+      const user_id = await uid();
+      if(!user_id){
+        if(window.Swal){ await Swal.fire({ icon:'info', title:'Please sign in', confirmButtonText:'Go to Login' }).then(r=>{ if(r.isConfirmed) window.location.href='/login'; }); }
+        else { alert('Please sign in'); }
+        return;
+      }
+      const ok = await ensureProfileOrPrompt(); if(!ok) return;
+      const sEl = document.getElementById('start');
+      const eEl = document.getElementById('end');
+      const s = sEl && 'value' in sEl ? sEl.value : '';
+      const e = eEl && 'value' in eEl ? eEl.value : '';
+  const sessionObj = await supabase.auth.getSession();
+  const token = sessionObj.data.session?.access_token;
+  const headers = {};
+  if(token){ headers['Authorization'] = `Bearer ${token}`; }
+  else if(user_id){ headers['X-User-Id'] = user_id; }
+  const res = await fetch(`${BACKEND_URL}/api/meals/history?start=${s}&end=${e}`, { headers });
+      const data = await res.json();
+      // Render log list only
+      const logsHost = document.getElementById('logs');
+      // clone logs to avoid mutating original
+      let logs = Array.isArray(data.logs) ? [...data.logs] : [];
+      // Apply sorting based on dropdown
+      const sortEl = document.getElementById('sort');
+      const sort = sortEl && 'value' in sortEl ? sortEl.value : 'date_desc';
+      const toTime = (v)=>{
+        const t = Date.parse(v);
+        return isNaN(t) ? 0 : t;
+      };
+      switch(sort){
+        case 'date_asc':
+          logs.sort((a,b)=> toTime(a.created_at) - toTime(b.created_at));
+          break;
+        case 'date_desc':
+          logs.sort((a,b)=> toTime(b.created_at) - toTime(a.created_at));
+          break;
+        case 'cal_desc':
+          logs.sort((a,b)=> Number(b.calories||0) - Number(a.calories||0));
+          break;
+        case 'prot_desc':
+          logs.sort((a,b)=> Number(b.protein||0) - Number(a.protein||0));
+          break;
+      }
+      if(logsHost){
+        logsHost.innerHTML = '';
+        const tpl = document.getElementById('logItemTemplate');
+        if(tpl && 'content' in tpl){
+          if(!logs.length){
+            const empty = document.createElement('div');
+            empty.className = 'text-muted small p-3';
+            empty.textContent = 'No logs in this range.';
+            logsHost.appendChild(empty);
+          }
+          logs.forEach(l=>{
+            const node = tpl.content.cloneNode(true);
+            const imgEl = node.querySelector('.log-img');
+            if(imgEl){
+              if(l.image_url){ imgEl.src = l.image_url; imgEl.style.display='inline-block'; }
+            }
+            const title = node.querySelector('.log-title'); if(title) title.textContent = l.food_name || l.class_name || 'Dish';
+            const meal = node.querySelector('.log-meal'); if(meal) meal.textContent = l.meal_type || '';
+            const time = node.querySelector('.log-time'); if(time) time.textContent = new Date(l.created_at).toLocaleString();
+            const cal = node.querySelector('.log-cal'); if(cal) cal.textContent = l.calories||0;
+            const prot = node.querySelector('.log-prot'); if(prot) prot.textContent = l.protein||0;
+            const fat = node.querySelector('.log-fat'); if(fat) fat.textContent = l.fat||0;
+            const carbs = node.querySelector('.log-carbs'); if(carbs) carbs.textContent = l.carbs||0;
+            const fiber = node.querySelector('.log-fiber'); if(fiber) fiber.textContent = l.fiber||0;
+            const delBtn = node.querySelector('.btn-delete');
+            if(delBtn){
+              delBtn.addEventListener('click', async ()=>{
+                const doDelete = async ()=>{
+                  try{
+                    const sess = await supabase.auth.getSession();
+                    const tkn = sess.data.session?.access_token;
+                    const hdrs = {};
+                    if(tkn){ hdrs['Authorization'] = `Bearer ${tkn}`; }
+                    else if(user_id){ hdrs['X-User-Id'] = user_id; }
+                    const resp = await fetch(`${BACKEND_URL}/api/meals/log/${encodeURIComponent(l.id)}`, { method:'DELETE', headers: hdrs });
+                    const dj = await resp.json();
+                    if(dj.success){
+                      if(window.Swal){ await Swal.fire({ icon:'success', title:'Deleted', timer:1000, showConfirmButton:false }); }
+                      await loadHistory();
+                    } else {
+                      if(window.Swal){ Swal.fire({ icon:'error', title:'Delete failed', text: dj.error || 'Unknown error' }); } else { alert('Delete failed'); }
+                    }
+                  }catch(err){ if(window.Swal){ Swal.fire({ icon:'error', title:'Delete failed', text: String(err) }); } else { alert('Delete failed'); } }
+                };
+                if(window.Swal){
+                  const ret = await Swal.fire({ title:'Delete this log?', text:'This cannot be undone.', icon:'warning', showCancelButton:true, confirmButtonText:'Delete' });
+                  if(ret.isConfirmed) await doDelete();
+                } else {
+                  if(confirm('Delete this log?')) await doDelete();
+                }
+              });
+            }
+            logsHost.appendChild(node);
+          });
+        }
+      }
+    }
+
+    // Load on button click and on initial page load
+    document.getElementById('load')?.addEventListener('click', loadHistory);
+    document.addEventListener('DOMContentLoaded', loadHistory);
+  })();
+</script>
