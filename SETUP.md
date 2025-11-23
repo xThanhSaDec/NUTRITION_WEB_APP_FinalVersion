@@ -1,99 +1,94 @@
-docker-compose up --build
+docker compose up --build
 
 # ⚙️ NutriDish Setup (Flask + PyTorch)
 
-## 1. Yêu cầu
+## 1. Requirements
 
-- Python 3.10+ (khuyến nghị)
-- 4GB RAM (tải model lần đầu)
+- Python 3.10+ (recommended)
 - Git, pip
+- ≥ 4 GB RAM (first model load)
 
-## 2. Tạo virtual environment & cài đặt
+## 2. Virtual Environment & Install
 
 ```bash
 python -m venv .venv
 ./.venv/Scripts/activate  # Windows PowerShell
 pip install -r flask_backend/requirements.txt
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
 
-## 3. Cấu hình môi trường
+## 3. Environment Configuration
 
-Tạo file `.env` ở root hoặc `flask_backend/.env`:
+Create `.env` at project root (or `flask_backend/.env`):
 
 ```
-SUPABASE_URL=your-project-url
-SUPABASE_SERVICE_ROLE_KEY=service-role-key
+SUPABASE_URL=<your-project-url>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_BUCKET=food-uploads
-REQUIRE_JWT=true
+REQUIRE_JWT=true   # false for local dev fallback
 ```
 
-Sao chép `web/config.example.js` thành `web/config.js` và điền `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+Copy `web/config.example.js` → `web/config.js` and fill `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+Run SQL in `supabase/schema.sql` using Supabase SQL Editor to create tables/policies.
 
-Chạy SQL trong `supabase/schema.sql` (Supabase SQL Editor) để tạo bảng/policy.
-
-## 4. Chạy ứng dụng
+## 4. Run Application
 
 ```bash
-python -m flask_backend.app.flask_app
+cd .\flask_backend\
+.\.venv\Scripts\Activate.ps1
+npm run dev
 ```
 
-Truy cập http://localhost:8000
+Open: http://localhost:8000
 
-## 5. Kiểm tra nhanh
+## 5. Health Check
 
 ```bash
 curl http://localhost:8000/health
 ```
 
-## 6. Tải model
+## 6. Model Weights
 
-Đặt file trọng số (`best_food101_model.pth`, `best_vit_vn30food_model.pth`) vào `ml_models/` ở root. Service tự động tìm.
+Place `best_food101_model.pth`, `best_vit_vn30food_model.pth` into `ml_models/`. Inference service auto-discovers.
 
-## 7. Docker (tuỳ chọn)
-
-```bash
-docker compose up --build
-```
-
-## 8. Gỡ bỏ gói thừa (nếu đã cài trước đó)
+## 8. Remove Unused Packages (if previously installed)
 
 ```bash
 pip uninstall -y tensorflow keras httpx
 ```
 
-## 9. Cấu trúc quan trọng
+## 9. Key Structure
 
 ```
 flask_backend/app/
-	flask_app.py          # App factory
-	routes/               # API endpoints
-	services/             # Inference, nutrition, Supabase, templating
-web/templates/pages/    # Trang .hbs
-web/templates/partials/ # Header, footer...
-web/assets/             # Logo, favicon, hình
-ml_models/              # Trọng số PyTorch
+  flask_app.py        # App factory + SSR routes
+  routes/             # API endpoints
+  services/           # Inference, nutrition, Supabase, templating
+web/templates/pages/  # Page templates (.hbs)
+web/templates/partials/ # Partials (header, footer, widgets)
+web/assets/           # Logo, favicon, images
+ml_models/            # PyTorch weights
+data/                 # nutrition_database.csv
 ```
 
 ## 10. Troubleshooting
 
-| Vấn đề            | Giải pháp                                                          |
-| ----------------- | ------------------------------------------------------------------ |
-| 404 model         | Kiểm tra tên file `.pth` chính xác đặt trong `ml_models/`          |
-| Supabase Auth lỗi | Kiểm tra URL, key; đồng bộ thời gian hệ thống                      |
-| Ảnh không hiện    | Đảm bảo đường dẫn `/app/assets/...` (Flask phục vụ thư mục `web/`) |
-| QUIC timeout      | Tạm tắt QUIC trong trình duyệt hoặc thử Firefox                    |
+| Issue               | Solution                                        |
+| ------------------- | ----------------------------------------------- |
+| Model 404           | Ensure correct `.pth` filename in `ml_models/`  |
+| Supabase auth error | Verify URL, keys, machine time sync             |
+| Image not showing   | Check path `/app/assets/...` served from `web/` |
+| QUIC timeout        | Disable QUIC or test in Firefox                 |
 
-## 11. Hiệu năng
+## 11. Performance
 
-- Lần đầu dự đoán: model load vào RAM.
-- Dự đoán sau: sử dụng cache `_model_cache`.
-- Có thể preload bằng cách gọi `get_inference_service()` khi khởi động.
+First prediction loads model into RAM; subsequent requests use cache. You can preload by calling `get_inference_service()` at startup.
 
-## 12. Nâng cấp sau
+## 12. Future Enhancements
 
-- Multi-food detection YOLO/DETR.
-- Lưu lịch sử target & khuyến nghị.
-- Mobile offline capture.
-- Recipe macro parsing.
+- Multi-food detection (YOLO / DETR)
+- Historical target & recommendations
+- Mobile offline capture & sync
+- Recipe macro parsing
 
-Hoàn tất cài đặt! 🎉
+Setup complete! 🎉

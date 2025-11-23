@@ -169,240 +169,194 @@ cd foodapp
 
 ### 2. Configure Supabase (once)
 
-1. Create a Supabase project, copy the Project URL and keys (Anon and Service Role).
-2. In the Supabase SQL editor, run the SQL in `supabase/schema.sql` to create tables and policies.
-3. Create a public Storage bucket named `food-uploads`.
-4. Create a copy of `backend/.env.example` as `backend/.env` and fill in:
+# 🍽️ NutriDish – Food Recognition & Nutrition Tracker
+
+NutriDish identifies dishes from images (PyTorch ResNet / ViT) and provides nutrition breakdown plus personalized daily targets. A Flask backend serves REST APIs and server‑side rendered Handlebars templates. Supabase handles authentication (JWT), persistence (users, profiles, food logs, daily summaries) and image storage.
+
+## Overview
+
+NutriDish combines image inference, nutrition lookup, goal evaluation, and historical analytics. Frontend pages are rendered server‑side (fast first paint) while selective client JavaScript enhances interactivity. Models and nutrition data are pluggable for future extension.
+
+## Architecture Summary
+
+Backend (Flask) exposes API blueprints for prediction, meals, user profile, health. Services encapsulate model loading, nutrition source access (CSV or Supabase), Supabase storage/API calls, templating, and goal calculations. Frontend Handlebars templates form pages; partials provide reusable header/footer/components.
+
+## Directory Structure (Key Paths)
 
 ```
-SUPABASE_URL=...
-SUPABASE_SERVICE_ROLE_KEY=...
+flask_backend/app/
+  flask_app.py              # App factory + SSR page routes
+  routes/                   # API endpoints (predict, meals, user, health)
+  controllers/              # Orchestrates services + request flow
+  middlewares/auth.py       # Supabase JWT or dev fallback auth
+  services/
+    inference_service.py    # PyTorch model load & predict (caching)
+    nutrition_service.py    # Nutrition lookup (CSV or Supabase table)
+    nutrition_goal_service.py# Target calculations & daily evaluation
+    supabase_service.py     # Wraps supabase-py (auth, storage, DB)
+    templating.py           # Handlebars server-side rendering
+web/
+  templates/pages/*.hbs     # Page templates (login, today, upload, etc.)
+  templates/partials/*.hbs  # Header, footer, stats blocks
+  js/                       # Page enhancement scripts
+  assets/                   # Static images, icons, logo
+  config.js                 # Client Supabase + backend config
+ml_models/                  # PyTorch weight files (.pth)
+data/nutrition_database.csv # Local nutrition fallback dataset
+supabase/schema.sql         # Tables & policies
+```
+
+## Setup
+
+```bash
+python -m venv .venv
+./.venv/Scripts/activate   # Windows PowerShell
+pip install -r flask_backend/requirements.txt
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+### Environment (.env)
+
+```
+SUPABASE_URL=<project-url>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 SUPABASE_BUCKET=food-uploads
+REQUIRE_JWT=true            # false for dev fallback
 ```
 
-For the frontend, set `SUPABASE_URL` and `SUPABASE_ANON_KEY` via `.env` or Streamlit secrets.
+Client config (`web/config.js`):
 
-### 3. Start Backend + Frontend (Docker Compose)
+```js
+window.APP_CONFIG = {
+  BACKEND_URL: window.location.origin,
+  SUPABASE_URL: "<project-url>",
+  SUPABASE_ANON_KEY: "<anon-key>",
+};
+```
+
+Apply SQL: open `supabase/schema.sql` in Supabase SQL editor.
+
+## Running
+
+```bash
+cd .\flask_backend\
+.\.venv\Scripts\Activate.ps1
+npm run dev    
+```
+
+Open http://localhost:8000
+
+## Docker (Optional)
 
 ```bash
 docker compose up --build
 ```
 
-App available at http://localhost:8000 (frontend served at `/`), API at `/api/*`.
+## Models
 
-### 4. (Optional) Start Flask backend locally
+Place weight files: `best_food101_model.pth`, `best_vit_vn30food_model.pth` in `ml_models/`. The inference service auto-detects by configured keys (e.g. `resnet_food101`, `vn30`). First request loads into memory; subsequent predictions use cached instance.
 
-```bash
-# Navigate to backend directory
-cd backend
+## Core APIs (Selected)
 
-# Install dependencies
-pip install -r requirements.txt
+Prediction:
 
-# Start Flask server
-python -m flask_backend.app.flask_app
-```
+- `GET /api/predict/models` – list available models
+- `POST /api/predict` – multipart form: `file`, optional `model`
 
-Backend will be available at: http://127.0.0.1:8000
+Meals & Nutrition:
 
-- API Documentation: http://127.0.0.1:8000/docs
-- Health Check: http://127.0.0.1:8000/health
+- `POST /api/meals/log` – save meal (image + servings + meal_type)
+- `GET /api/meals/today` – today logs + totals + goal evaluation
+- `GET /api/meals/history` – date range aggregated logs
+- `GET /api/stats/series` – bucketed historical series (day/week/month/year)
 
-### Frontend configuration
+User:
 
-```bash
-# Navigate to frontend directory
-cd frontend
+- `GET /api/user/profile`
+- `POST /api/user/profile`
+- `POST /api/user/avatar`
 
-# Install dependencies
-pip install -r requirements.txt
+Health:
 
-# Start Streamlit app
-Copy `web/config.example.js` to `web/config.js` and set your URLs/keys.
-#Start API routes
-cd backend
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+- `GET /health`
 
-```
+## Authentication
 
-Frontend will be available at: http://localhost:8501
+Supabase JWT is expected when `REQUIRE_JWT=true`. In dev (`REQUIRE_JWT=false`) fallback header `X-User-Id` (or `DEMO_USER_ID` in `.env`) can be used. Middleware attempts admin validation; if unavailable, a safe JWT payload decode fallback extracts `sub` for user id.
 
-## 🔧 Features
+## Nutrition & Goals
 
-### AI-Powered Food Recognition
+`nutrition_service.py` obtains per-serving macros (calories, protein, fat, carbs, fiber). `nutrition_goal_service.py` computes targets from profile (age, weight, height, gender, activity) and evaluates daily completeness plus macro deficits/excesses. Recommendations retrieved from nutrition dataset when deficits exist.
 
-- **131 Food Categories**: 101 international + 30 Vietnamese dishes
-- **High Accuracy**: ResNet50 deep learning architecture
-- **Confidence Scores**: Prediction confidence with visual indicators
-- **Top-3 Predictions**: Alternative predictions with confidence levels
+## Client Functionality
 
-### Comprehensive Nutrition Database
+- Upload: image preview, model selection, prediction, top-5 alternatives, macro progress bars.
+- Today: detect & save meal inline; totals, missing macros, mini charts, pie chart.
+- Statistics: historical macro trends, bucket selection, dynamic targets, advice.
+- Profile: set demographics for personalized targets; avatar upload.
 
-- **Detailed Information**: Calories, protein, fat, carbohydrates, fiber
-- **Per Serving Values**: All nutritional values calculated per typical serving
-- **Health Suggestions**: AI-generated dietary recommendations
-- **Search & Compare**: Search dishes and compare nutritional values
-
-### Modern Web Interface
-
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Real-time Processing**: Fast image analysis and results
-- **Interactive UI**: Streamlit-powered user interface
-- **Multi-page Navigation**: Organized content across multiple pages
-
-### Developer-Friendly API
-
-- **RESTful Design**: Clean and intuitive API endpoints
-- **Auto Documentation**: Swagger/OpenAPI documentation
-- **CORS Enabled**: Ready for frontend integration
-- **Error Handling**: Comprehensive error responses
-
-## Technical Notes
-
-- Flask render SSR: `templating.py` cung cấp biến script CDN (Supabase, Chart.js, Handlebars).
-- Auth linh hoạt: chế độ dev có thể bỏ JWT (`REQUIRE_JWT=false`) và dùng header `X-User-Id`.
-- Supabase Storage: upload file tạm rồi gọi API storage (xử lý trường hợp client yêu cầu path file).
-- Timezone xử lý logs: chuẩn hóa UTC rồi lọc lại theo local timezone.
-
-## Usage Instructions
-
-### For Users
-
-1. **Start both servers** (backend and frontend)
-2. **Navigate to frontend** at http://localhost:8501
-3. **Go to Predict page** using sidebar navigation
-4. **Upload food image** (JPG, PNG, JPEG - max 10MB)
-5. **Click "Analyze Food"** to get results
-6. **View results**: Food name, confidence, nutrition info, alternatives
-
-### For Developers
-
-1. **API Testing**: Use http://127.0.0.1:8000/docs for interactive testing
-2. **Custom Integration**: Make HTTP requests to API endpoints
-3. **Model Updates**: Replace `.keras` model file and class mapping
-4. **Database Updates**: Modify `nutrition_database.csv` for new dishes
-
-### Supported Formats
-
-- **JPG/JPEG**: Recommended for photos
-- **PNG**: Good for graphics and screenshots
-- **Maximum size**: 10MB per image
-- **Minimum resolution**: 64×64 pixels
-
-## API Endpoints
-
-### Prediction
-
-- `POST /api/predict` - Upload image for food recognition
-- `GET /api/predict/status` - Get prediction service status
-- `GET /api/predict/test` - Test prediction endpoint
-
-### Nutrition
-
-- `GET /api/nutrition/{dish_name}` - Get nutrition info
-- `GET /api/nutrition/search/dishes?query={term}` - Search dishes
-- `GET /api/nutrition/database/summary` - Database statistics
-- `GET /api/nutrition/compare?dishes={dish1,dish2}` - Compare nutrition
-
-### Information
-
-- `GET /api/aboutus` - HTML about page
-- `GET /api/aboutus/json` - JSON project info
-- `GET /api/aboutus/team` - Team member details
-
-### User, Meals & Progress
-
-- `POST /api/user/profile` - Save profile and calculated targets
-- `GET /api/user/profile?user_id=...` - Get profile by user id
-- `POST /api/meals/log` - Multipart form: file + user_id + meal_type + servings
-- `GET /api/meals/today?user_id=...` - Today logs + totals + evaluation
-- `GET /api/streak?user_id=...` - Current streak of completed days
-
-## Testing
-
-### Manual Testing
-
-1. **Health Check**: `curl http://127.0.0.1:8000/health`
-2. **Image Upload**: Use frontend or API docs at `/docs`
-3. **Nutrition Query**: `curl http://127.0.0.1:8000/api/nutrition/pho_bo`
-
-### Automated Testing
+## Testing (Manual Quick Checks)
 
 ```bash
-# Backend tests (if implemented)
-cd backend
-python -m pytest
-
-# Frontend testing through manual interaction
-cd frontend
-streamlit run streamlit_app.py
+curl http://localhost:8000/health
+curl -F "file=@dish.jpg" http://localhost:8000/api/predict
 ```
 
-## 🔧 Troubleshooting
+Functional user-level test cases (examples): login, upload & predict, save meal (nutrition scaled by servings), view daily totals, edit profile, fetch historical series, delete meal log.
 
-### Common Issues
+## Dependencies (Minimal)
 
-**Backend won't start:**
+`flask_backend/requirements.txt` contains:
 
-- Check Python version (3.8+)
-- Install requirements: `pip install -r requirements.txt`
-- Check port 8000 availability
+```
+Flask
+flask-cors
+python-dotenv
+supabase
+pybars3
+pandas
+pillow
+```
 
-**Model loading fails:**
+Install PyTorch separately (see setup). Removed: tensorflow, keras, httpx, unused extras.
 
-- Ensure `best_model_phase2.keras` exists in `backend/app/ml_models/`
-- Check available memory (>4GB recommended)
-- Verify TensorFlow installation
+## Troubleshooting
 
-**Frontend can't connect:**
+| Issue              | Resolution                                                  |
+| ------------------ | ----------------------------------------------------------- |
+| Missing model      | Verify filename in `ml_models/` matches expected key        |
+| Auth 401           | Check Supabase keys, JWT enabled, session exists, time sync |
+| Images not shown   | Confirm `/app/assets/...` path & served from `web/`         |
+| Slow first predict | Normal (model load); consider preload on startup            |
+| Timezone mismatch  | Code normalizes UTC then filters local date                 |
 
-- Ensure backend is running on port 8000
-- Check CORS settings in backend
-- Verify network connectivity
+## Performance Notes
 
-**Prediction errors:**
+Model caching avoids repeat loads. Aggregations compute per bucket using Python filtering + Supabase queries. Optional enhancements: background inference service, CDN for static assets, macro-level caching of nutrition rows.
 
-- Check image format (JPG, PNG, JPEG)
-- Verify image size (<10MB)
-- Ensure image is not corrupted
+## Roadmap
 
-### Hiệu năng
+- Multi-food detection (YOLO / DETR)
+- Target evolution & smarter recommendations
+- Mobile offline capture & sync
+- Recipe parsing & barcode scanning
+- Voice command input
 
-- Lần dự đoán đầu: tải model (~vài giây CPU).
-- Cache model trong `_model_cache` giảm độ trễ các request sau.
-- Tối ưu thêm: preload model khi app khởi động nếu cần.
+## Team
 
-## Development Team
-
-- **Tran Dinh Khuong** (23110035) - Lead Developer & ML Engineer
-- **Nguyen Nhat Phat** (23110053) - Backend Developer & API Engineer
-- **Tran Huynh Xuan Thanh** (23110060) - Frontend Developer & UI/UX Designer
-
-**Supervisor**: Assoc. Prof. Dr. Hoang Van Dung
-
-## Project Statistics
-
-- **Development Time**: 15 weeks
-- **Food Categories**: 131 (101 international + 30 Vietnamese)
-- **Model Parameters**: 23M+ parameters
-- **API Endpoints**: 12 endpoints
-- **Technologies Used**: 8+ frameworks and libraries
-
-## Future Enhancements (detail)
-
-- Multi-item detection (YOLO / DETR).
-- Personal goals history & recommendations ML.
-- Recipe parsing & ingredient macro aggregation.
-- Offline mobile capture + sync.
+Tran Dinh Khuong – ML / Backend  
+Nguyen Nhat Phat – API / Database  
+Tran Huynh Xuan Thanh – Frontend / UI  
+Supervisor: Assoc. Prof. Dr. Hoang Van Dung
 
 ## License
 
-This project is developed for academic purposes as part of a 15-week IT project course.
+Academic project (15‑week course). For internal educational use.
 
 ## Contributing
 
-This is an academic project. For suggestions or issues, please contact the development team.
+Internal project; for suggestions or issues, contact the team directly.
 
 ---
 
-**Enjoy exploring the world of AI-powered food recognition and nutrition analysis!**
+Enjoy exploring AI‑powered food recognition and nutrition analysis!
