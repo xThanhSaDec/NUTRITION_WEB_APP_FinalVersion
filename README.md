@@ -202,7 +202,3 @@ Academic project (15‑week course). For internal educational use.
 ## Contributing
 
 Internal project; for suggestions or issues, contact the team directly.
-
----
-
-Enjoy exploring AI‑powered food recognition and nutrition analysis!
